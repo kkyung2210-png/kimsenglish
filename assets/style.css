@@ -1,0 +1,56 @@
+/* 사이트 전체에서 반복 사용하는 색상과 간격입니다. */
+:root { --navy:#17324d; --blue:#2f6fed; --blue-dark:#1e55c7; --sky:#eef5ff; --cream:#fffaf1; --text:#243447; --muted:#64748b; --white:#fff; --line:#dbe5f1; --shadow:0 16px 40px rgba(23,50,77,.1); }
+
+/* 모든 화면에 적용되는 기본 모양입니다. */
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { margin:0; color:var(--text); background:var(--white); font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif; line-height:1.7; }
+a { color:inherit; }
+.container { width:min(1100px,calc(100% - 40px)); margin:0 auto; }
+
+/* 위쪽 메뉴와 로고 영역입니다. */
+.site-header { position:sticky; top:0; z-index:10; background:rgba(255,255,255,.95); border-bottom:1px solid var(--line); }
+.nav { min-height:68px; display:flex; align-items:center; justify-content:space-between; gap:24px; }
+.logo { color:var(--navy); font-size:1.1rem; font-weight:800; text-decoration:none; }
+.nav-link { color:var(--muted); font-weight:700; text-decoration:none; }
+
+/* 페이지에서 가장 먼저 보이는 소개 영역입니다. */
+.hero { padding:92px 0 76px; background:linear-gradient(135deg,var(--sky),var(--cream)); }
+.eyebrow,.card-meta { margin:0 0 12px; color:var(--blue); font-weight:800; letter-spacing:.04em; }
+h1,h2,h3 { color:var(--navy); line-height:1.25; }
+h1 { max-width:850px; margin:0; font-size:clamp(2.15rem,6vw,4.2rem); letter-spacing:-.04em; }
+.lead { max-width:720px; margin:24px 0 32px; color:#40566d; font-size:clamp(1.05rem,2.2vw,1.25rem); }
+.button { display:inline-flex; align-items:center; justify-content:center; min-height:52px; padding:0 24px; color:var(--white); background:var(--blue); border-radius:12px; font-weight:800; text-decoration:none; box-shadow:0 10px 24px rgba(47,111,237,.22); }
+.button:hover { background:var(--blue-dark); }
+
+/* 메인 링크 목록과 지역별 본문에 사용하는 공통 영역입니다. */
+.section { padding:76px 0; }
+.section-soft { background:#f8fafc; }
+.section-title { margin:0 0 12px; font-size:clamp(1.65rem,4vw,2.4rem); }
+.section-intro { max-width:700px; margin:0 0 32px; color:var(--muted); }
+.grid { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
+.card { padding:28px; background:var(--white); border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow); }
+.card h2,.card h3 { margin-top:0; font-size:1.25rem; }
+.card p { color:var(--muted); }
+.card .card-meta { color:var(--blue); }
+.text-link { color:var(--blue); font-weight:800; text-decoration:none; }
+.content { max-width:760px; }
+.content h2 { margin-top:42px; font-size:1.65rem; }
+.check-list { padding-left:1.2rem; }
+.check-list li { margin:10px 0; }
+.cta { padding:38px; text-align:center; background:var(--navy); border-radius:22px; }
+.cta h2,.cta p { color:var(--white); }
+.cta p { opacity:.8; }
+.site-footer { padding:34px 0; color:var(--muted); border-top:1px solid var(--line); }
+.footer-inner { display:flex; justify-content:space-between; gap:20px; }
+
+/* 휴대전화에서는 카드와 버튼을 한 줄 폭으로 보여 줍니다. */
+@media (max-width:760px) {
+  .container { width:min(100% - 28px,1100px); }
+  .hero { padding:64px 0 56px; }
+  .section { padding:56px 0; }
+  .grid { grid-template-columns:1fr; }
+  .card { padding:22px; }
+  .button { width:100%; }
+  .footer-inner { flex-direction:column; }
+}
