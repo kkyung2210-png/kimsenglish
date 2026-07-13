@@ -76,7 +76,7 @@ node preview-server.js
 3. Netlify는 자동으로 `node generate-pages.js`를 실행합니다.
 4. 생성된 `dist` 폴더만 홈페이지로 공개합니다.
 
-실제 배포 전에 `pages.csv`의 `example.com`과 `hello@example.com`을 실제 도메인과 상담 주소로 바꾸세요.
+현재 운영 주소는 `https://kimsenglish-kr.netlify.app`입니다. 실제 상담 채널이 정해지면 `pages.csv`의 `contact_url`을 상담 주소로 바꾸세요.
 
 ## 왜 이렇게 바꿨나요?
 

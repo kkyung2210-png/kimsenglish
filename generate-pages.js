@@ -73,7 +73,7 @@ function renderTemplate(template, values) {
 
 // 도메인 입력에 https가 빠져 있어도 올바른 주소로 바꿉니다.
 function makeBaseUrl(domain) {
-  const cleanDomain = String(domain || "example.com").trim().replace(/\/$/, "");
+  const cleanDomain = String(domain || "https://kimsenglish-kr.netlify.app").trim().replace(/\/$/, "");
   return /^https?:\/\//i.test(cleanDomain) ? cleanDomain : `https://${cleanDomain}`;
 }
 
@@ -121,7 +121,7 @@ for (const [index, page] of pages.entries()) {
   const target = escapeHtml(page.target);
   const heading = escapeHtml(page.keyword || page.title);
   const description = escapeHtml(page.description);
-  const contactUrl = escapeHtml(page.contact_url || `mailto:hello@example.com?subject=${encodeURIComponent(`${page.region} ${page.subject} 과외 상담 신청`)}`);
+  const contactUrl = escapeHtml(page.contact_url || "#consultation");
   const intro = escapeHtml(page.intro || `${page.region}에서 ${page.subject} 회화를 배우고 싶은 ${page.target} 학습자를 위한 일대일 맞춤 과외입니다. 현재 실력과 학습 목적을 먼저 확인해 편안한 속도로 진행합니다.`);
   const benefits = [
     page.benefit_1 || `${page.subject} 회화를 기초부터 차근차근 배우고 싶은 ${page.target} 학습자`,
@@ -131,7 +131,7 @@ for (const [index, page] of pages.entries()) {
 
   const main = `<section class="hero"><div class="container"><p class="eyebrow">${region} · ${target} · ${subject}</p><h1>${heading}</h1><p class="lead">${description}</p><a class="button" href="${contactUrl}">상담 신청하기</a></div></section>
   <section class="section"><div class="container content"><h2>${region}에서 시작하는 ${subject} 회화 수업</h2><p>${intro}</p><p>실제 상황에서 자연스럽게 말하는 연습에 집중합니다. 자주 쓰는 표현을 직접 말하고 부족한 부분을 천천히 반복합니다.</p><h2>이런 분께 잘 맞습니다</h2><ul class="check-list">${benefits}</ul><h2>수업 진행 방법</h2><p>첫 상담에서 현재 수준과 목표, 가능한 시간을 확인한 뒤 ${region} ${target} 학습자에게 맞는 ${subject} 회화 학습 방향을 정합니다.</p></div></section>
-  <section class="section section-soft"><div class="container"><div class="cta"><h2>${escapeHtml(page.cta_title || `${page.region} ${page.subject} 과외가 궁금하신가요?`)}</h2><p>${escapeHtml(page.cta_text || "현재 실력과 배우고 싶은 내용을 편하게 알려주세요.")}</p><a class="button" href="${contactUrl}">상담 신청하기</a></div></div></section>`;
+  <section class="section section-soft" id="consultation"><div class="container"><div class="cta"><h2>${escapeHtml(page.cta_title || `${page.region} ${page.subject} 과외가 궁금하신가요?`)}</h2><p>${escapeHtml(page.cta_text || "상담 신청은 버튼을 이용해 주세요.")}</p><a class="button" href="${contactUrl}">상담 신청하기</a></div></div></section>`;
 
   const html = renderTemplate(template, {
     LANG: escapeHtml(page.language || "ko"),
@@ -163,8 +163,8 @@ const homeHtml = renderTemplate(template, {
   NAV_LINK: "#lessons",
   NAV_TEXT: "수업 지역 보기",
   MAIN: homeMain,
-  FOOTER_LINK: "mailto:hello@example.com",
-  FOOTER_TEXT: "hello@example.com",
+  FOOTER_LINK: "#lessons",
+  FOOTER_TEXT: "상담 신청은 버튼을 이용해 주세요.",
 });
 fs.writeFileSync(path.join(temporaryOutputPath, "index.html"), homeHtml, "utf8");
 
