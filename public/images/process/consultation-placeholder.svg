@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-labelledby="title desc">
+  <title id="title">Consultation Illustration</title>
+  <desc id="desc">상담 과정 이미지가 들어갈 기본 일러스트</desc>
+  <rect width="320" height="320" rx="32" fill="#e5e7eb"/>
+  <rect x="32" y="32" width="256" height="256" rx="24" fill="#edf3ff" stroke="#9ca3af" stroke-width="2" stroke-dasharray="8 8"/>
+  <path d="M101 111h118a20 20 0 0 1 20 20v62a20 20 0 0 1-20 20h-62l-36 28 8-28h-28a20 20 0 0 1-20-20v-62a20 20 0 0 1 20-20Z" fill="none" stroke="#2457d6" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M120 151h80M120 176h52" stroke="#2457d6" stroke-width="8" stroke-linecap="round"/>
+  <text x="160" y="274" text-anchor="middle" fill="#526176" font-family="Arial, sans-serif" font-size="15" font-weight="700">Consultation Illustration</text>
+</svg>

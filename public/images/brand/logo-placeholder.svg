@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Kim's English Logo Placeholder</title>
+  <desc id="desc">향후 브랜드 로고로 교체할 수 있는 기본 로고</desc>
+  <rect width="64" height="64" rx="18" fill="#2457d6"/>
+  <path d="M18 17v30M19 34l23-17M28 28l18 19" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

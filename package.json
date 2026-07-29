@@ -1,0 +1,27 @@
+{
+  "name": "kimsenglish",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "search-console:sync": "node scripts/sync-search-console.js",
+    "search-console:refresh": "node scripts/sync-search-console.js --refresh",
+    "dashboard": "node scripts/dashboard-server.js",
+    "test:search-console": "node scripts/test-search-console.js",
+    "build:changed": "node scripts/build.js --changed",
+    "build:full": "node scripts/build.js --full",
+    "audit": "node scripts/seo-audit.js",
+    "audit:full": "node scripts/seo-audit.js --full",
+    "audit:strict": "node scripts/seo-audit.js --strict",
+    "audit:test": "node scripts/seo-audit/self-test.js",
+    "audit:assets": "node scripts/asset-audit.js",
+    "fix": "node scripts/seo-fix.js",
+    "fix:apply": "node scripts/seo-fix.js --apply",
+    "fix:strict": "node scripts/seo-fix.js --apply --strict",
+    "fix:test": "node scripts/seo-fix/self-test.js",
+    "test:assets": "node scripts/test-brand-assets.js",
+    "test:hero": "node scripts/test-hero-assets.js",
+    "preview": "node preview-server.js",
+    "validate:content": "node scripts/validate-content-intelligence.js"
+  }
+}

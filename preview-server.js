@@ -6,7 +6,12 @@ const path = require("path");
 // 자동 생성 결과만 보여 주므로 실제 Netlify 배포 화면과 같습니다.
 const root = path.join(__dirname, "dist");
 const port = 8080;
-const types = { ".html":"text/html; charset=utf-8", ".css":"text/css; charset=utf-8", ".js":"text/javascript; charset=utf-8", ".xml":"application/xml; charset=utf-8", ".txt":"text/plain; charset=utf-8" };
+const types = {
+  ".html":"text/html; charset=utf-8", ".css":"text/css; charset=utf-8", ".js":"text/javascript; charset=utf-8",
+  ".json":"application/json; charset=utf-8", ".webmanifest":"application/manifest+json; charset=utf-8",
+  ".xml":"application/xml; charset=utf-8", ".txt":"text/plain; charset=utf-8", ".svg":"image/svg+xml",
+  ".webp":"image/webp", ".avif":"image/avif", ".png":"image/png", ".jpg":"image/jpeg", ".jpeg":"image/jpeg",
+};
 
 // 요청받은 주소와 같은 폴더의 index.html을 찾아 보여 줍니다.
 const server = http.createServer((request, response) => {

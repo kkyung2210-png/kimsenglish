@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "mode": "mock",
+  "siteUrl": "https://kimsenglish.co.kr/",
+  "dateRangeDays": 28,
+  "rowLimit": 25000,
+  "fallbackToMock": true,
+  "cache": {
+    "ttlMinutes": 360
+  },
+  "mock": {
+    "indexedPercent": 93
+  },
+  "environment": {
+    "accessToken": "GOOGLE_SEARCH_CONSOLE_ACCESS_TOKEN",
+    "siteUrl": "GOOGLE_SEARCH_CONSOLE_SITE_URL",
+    "apiKey": "GOOGLE_SEARCH_CONSOLE_API_KEY"
+  },
+  "urlInspection": {
+    "enabled": false,
+    "maxPages": 0
+  }
+}

@@ -1,0 +1,686 @@
+// 외부 패키지 없이 Node.js 기본 기능만 사용하는 정적 페이지 생성기입니다.
+const fs = require("fs");
+const path = require("path");
+const { makeJsonLd, makePageSchema } = require("./generate-schema");
+const { createPageContent } = require("./content-intelligence");
+const brandAssets = require("../config/brand-assets");
+const reviews = require("../config/reviews");
+const { SITE_URL } = require("../config/site");
+const {
+  config: assetConfig, resolveCtaAsset, resolveEntry, resolveFeatureAsset, resolveHeroAsset,
+  resolveLogoAsset, resolveOgAsset, resolvePageAsset, resolveProcessAsset, resolveSubjectAsset,
+} = require("./utils/assets/resolve-asset");
+const { renderImageBox, renderLogo, renderOgTags, renderPicture } = require("./utils/assets/image-html");
+
+const root = path.resolve(__dirname, "..");
+const csvPath = path.join(root, "pages.csv");
+const templatePath = path.join(root, "templates", "page.html");
+const productionUrl = SITE_URL;
+const PROVINCE_ORDER = [
+  "서울특별시", "경기도", "인천광역시", "강원특별자치도", "충청북도", "충청남도",
+  "세종특별자치시", "대전광역시", "전북특별자치도", "광주광역시", "전라남도",
+  "경상북도", "대구광역시", "경상남도", "부산광역시", "울산광역시", "제주특별자치도",
+];
+// 모든 경로 선택은 config/brand-assets.js와 공통 resolver에서 처리합니다.
+const heroAssets = resolveHeroAsset(root);
+const englishImage = resolveSubjectAsset("영어회화", root);
+const japaneseImage = resolveSubjectAsset("일본어", root);
+const examImage = resolveSubjectAsset("토익", root);
+const businessImage = resolveSubjectAsset("비즈니스영어", root);
+const featurePersonal = resolveFeatureAsset("personal", root);
+const featureNationwide = resolveFeatureAsset("nationwide", root);
+const featureManagement = resolveFeatureAsset("management", root);
+const featureLevelTest = resolveFeatureAsset("levelTest", root);
+const processLevelTest = resolveProcessAsset("levelTest", root);
+const processPlan = resolveProcessAsset("plan", root);
+const processLesson = resolveProcessAsset("lesson", root);
+const processFeedback = resolveProcessAsset("feedback", root);
+const levelTestCtaImage = resolveCtaAsset("levelTest", root);
+
+// 회화·시험·비즈니스·여행마다 8개씩 준비한 description 패턴입니다.
+const DESCRIPTION_PATTERNS = {
+  conversation: [
+    (c) => `${c.region} ${c.audience} 맞춤 ${c.service} 수업입니다. ${c.intentSentence} ${c.concernSentence} ${c.toneLead} 수업에서는 ${c.focus} 내용을 중심으로 연습합니다.`,
+    (c) => `${c.region}에서 진행하는 ${c.audience} 대상 ${c.service} 안내입니다. ${c.concernSentence} ${c.intentSentence} 주요 수업 내용은 ${c.focus}입니다.`,
+    (c) => `${c.region} ${c.service} 수업을 알아보는 ${c.audience}에게 필요한 내용을 담았습니다. ${c.intentSentence} ${c.concernSentence} ${c.toneLead} ${c.focus} 중심으로 진행합니다.`,
+    (c) => `${c.region} ${c.service} 수업은 ${c.audience}의 현재 목적을 먼저 확인합니다. ${c.intentSentence} ${c.concernSentence} 학습 범위에는 ${c.focus} 내용이 포함됩니다.`,
+    (c) => `${c.region}에서 시작하는 ${c.audience} 대상 ${c.service} 수업입니다. ${c.concernSentence} ${c.intentSentence} ${c.toneLead} ${c.focus} 내용을 차근차근 다룹니다.`,
+    (c) => `${c.region}에서 ${c.service} 수업을 찾는 ${c.audience}에게 필요한 방향을 안내합니다. ${c.intentSentence} ${c.concernSentence} 핵심 학습 내용은 ${c.focus}입니다.`,
+    (c) => `${c.region} ${c.audience} 대상 ${c.service} 수업입니다. ${c.intentSentence} ${c.methodSentence} 수업 초점은 ${c.focus}입니다.`,
+    (c) => `${c.region}에서 ${c.service} 학습을 시작하는 ${c.audience}를 위한 안내입니다. ${c.concernSentence} ${c.resultSentence} ${c.toneLead} 진행합니다.`,
+  ],
+  exam: [
+    (c) => `${c.region} ${c.audience} 대상 ${c.service} 준비 수업입니다. ${c.intentSentence} ${c.concernSentence} ${c.toneLead} 먼저 ${c.focus} 내용을 정리합니다.`,
+    (c) => `${c.region}에서 ${c.service} 준비가 필요한 ${c.audience}를 위한 안내입니다. ${c.concernSentence} ${c.intentSentence} 단계별 학습 내용은 ${c.focus}입니다.`,
+    (c) => `${c.region} ${c.service} 준비 방향을 알아보는 ${c.audience}에게 필요한 내용을 담았습니다. ${c.intentSentence} ${c.concernSentence} ${c.toneLead} ${c.focus} 중심으로 학습합니다.`,
+    (c) => `${c.region} ${c.service} 수업은 ${c.audience}의 학습 목적부터 확인합니다. ${c.concernSentence} ${c.intentSentence} 우선 다룰 내용은 ${c.focus}입니다.`,
+    (c) => `${c.region}에서 진행하는 ${c.audience} 대상 ${c.service} 학습 안내입니다. ${c.intentSentence} ${c.concernSentence} ${c.focus} 내용을 순서대로 점검합니다.`,
+    (c) => `${c.region}에서 ${c.service} 학습 방향을 찾는 ${c.audience}에게 필요한 기준을 안내합니다. ${c.concernSentence} ${c.intentSentence} 핵심 준비 내용은 ${c.focus}입니다.`,
+    (c) => `${c.region} ${c.audience} 대상 ${c.service} 준비 안내입니다. ${c.intentSentence} ${c.methodSentence} 기대하는 변화는 ${c.result}입니다.`,
+    (c) => `${c.region}에서 ${c.service} 준비를 시작하는 ${c.audience}를 위한 수업입니다. ${c.concernSentence} ${c.focus} 내용을 우선해 ${c.toneLead} 진행합니다.`,
+  ],
+  business: [
+    (c) => `${c.region} ${c.audience}의 업무 목적을 반영한 ${c.service} 수업입니다. ${c.intentSentence} ${c.concernSentence} ${c.toneLead} 수업 초점은 ${c.focus}입니다.`,
+    (c) => `${c.region}에서 진행하는 ${c.audience} 대상 ${c.service} 안내입니다. ${c.concernSentence} ${c.intentSentence} 실무 학습 내용은 ${c.focus}입니다.`,
+    (c) => `${c.region}에서 업무용 ${c.service} 수업을 찾는 ${c.audience}에게 필요한 내용을 담았습니다. ${c.intentSentence} ${c.concernSentence} ${c.focus} 중심으로 연습합니다.`,
+    (c) => `${c.region} ${c.service} 수업은 ${c.audience}의 사용 목적부터 확인합니다. ${c.concernSentence} ${c.intentSentence} ${c.toneLead} ${c.focus} 내용을 익힙니다.`,
+    (c) => `${c.region} ${c.audience} 대상 ${c.service} 수업 안내입니다. ${c.intentSentence} ${c.concernSentence} 업무에 필요한 학습 내용은 ${c.focus}입니다.`,
+    (c) => `${c.region}에서 ${c.service} 활용을 준비하는 ${c.audience}에게 필요한 방향을 안내합니다. ${c.concernSentence} ${c.intentSentence} ${c.focus} 내용을 실제 목적에 맞춰 연습합니다.`,
+    (c) => `${c.region} ${c.audience} 대상 ${c.service} 수업입니다. ${c.intentSentence} ${c.methodSentence} 업무 학습 초점은 ${c.focus}입니다.`,
+    (c) => `${c.region}에서 ${c.service} 활용을 시작하는 ${c.audience}를 위한 안내입니다. ${c.concernSentence} ${c.resultSentence} ${c.toneLead} 진행합니다.`,
+  ],
+  travel: [
+    (c) => `${c.region} ${c.audience} 대상 ${c.service} 준비 수업입니다. ${c.intentSentence} ${c.concernSentence} ${c.toneLead} 여행 상황에 맞춰 ${c.focus} 내용을 연습합니다.`,
+    (c) => `${c.region}에서 진행하는 ${c.audience} 대상 ${c.service} 안내입니다. ${c.concernSentence} ${c.intentSentence} 먼저 익힐 내용은 ${c.focus}입니다.`,
+    (c) => `${c.region}에서 여행용 ${c.service} 수업을 찾는 ${c.audience}에게 필요한 내용을 담았습니다. ${c.intentSentence} ${c.concernSentence} ${c.focus} 중심으로 준비합니다.`,
+    (c) => `${c.region} ${c.service} 수업은 ${c.audience}의 여행 목적부터 확인합니다. ${c.concernSentence} ${c.intentSentence} ${c.toneLead} ${c.focus} 내용을 상황별로 다룹니다.`,
+    (c) => `${c.region} ${c.audience} 대상 ${c.service} 수업 안내입니다. ${c.intentSentence} ${c.concernSentence} 여행에서 필요한 학습 내용은 ${c.focus}입니다.`,
+    (c) => `${c.region}에서 ${c.service} 준비가 필요한 ${c.audience}에게 학습 방향을 안내합니다. ${c.concernSentence} ${c.intentSentence} ${c.focus} 내용을 여행 흐름에 맞춰 익힙니다.`,
+    (c) => `${c.region} ${c.audience} 대상 ${c.service} 준비 안내입니다. ${c.intentSentence} ${c.methodSentence} 여행 학습 초점은 ${c.focus}입니다.`,
+    (c) => `${c.region}에서 ${c.service} 준비를 시작하는 ${c.audience}를 위한 수업입니다. ${c.concernSentence} ${c.resultSentence} ${c.toneLead} 진행합니다.`,
+  ],
+};
+
+const TONE_PROFILES = {
+  "친근형": { lead: "부담 없이", direct: "처음이어도 현재 수준부터 편하게 시작할 수 있습니다.", faq: "네. 편하게 현재 상황부터 알려주시면 됩니다." },
+  "신뢰형": { lead: "현재 수준과 목적을 확인한 뒤", direct: "현재 수준과 학습 목적을 먼저 확인해 필요한 내용을 정합니다.", faq: "네. 현재 상황을 먼저 확인한 뒤 알맞은 방향을 안내합니다." },
+  "전문형": { lead: "학습 요소를 단계적으로 나누어", direct: "학습 목표와 필요한 요소를 구분해 순서대로 진행합니다.", faq: "네. 목표와 현재 수준을 기준으로 학습 요소를 구분합니다." },
+  "목표달성형": { lead: "목표에 필요한 내용을 우선해", direct: "원하는 목표에 필요한 내용을 먼저 정하고 학습 순서를 구성합니다.", faq: "네. 목표를 확인한 뒤 우선순위에 맞춰 진행합니다." },
+  "차분형": { lead: "서두르지 않고 현재 속도에 맞춰", direct: "현재 속도에 맞춰 필요한 내용을 하나씩 익힐 수 있습니다.", faq: "네. 서두르지 않고 현재 수준에 맞춰 진행합니다." },
+  "코칭형": { lead: "학습 과정을 함께 점검하며", direct: "학습 과정과 어려운 지점을 함께 점검하며 다음 단계를 정합니다.", faq: "네. 현재 고민을 함께 확인하고 다음 학습 단계를 정합니다." },
+};
+
+const PROCESS_STEPS = {
+  conversation: [
+    ["듣기", "현재 수준에서 들리는 표현과 어려운 부분을 확인합니다."],
+    ["표현 학습", "목적에 맞는 핵심 표현과 문장 구조를 익힙니다."],
+    ["상황별 말하기", "실제 상황을 가정해 배운 표현을 직접 사용합니다."],
+    ["피드백", "말한 내용을 점검하고 필요한 표현을 다시 연습합니다."],
+  ],
+  exam: [
+    ["진단", "현재 점수와 영역별 강점 및 보완점을 확인합니다."],
+    ["영역별 학습", "목표에 필요한 개념과 문제 유형을 순서대로 학습합니다."],
+    ["문제풀이", "정답 근거와 시간 배분을 함께 점검합니다."],
+    ["오답관리", "반복되는 실수를 분류하고 다시 풀어 봅니다."],
+  ],
+  business: [
+    ["업무 상황 확인", "실제로 영어가 필요한 업무 장면과 목적을 정리합니다."],
+    ["필요한 표현 정리", "회의와 이메일 등 필요한 표현을 우선 학습합니다."],
+    ["역할 연습", "업무 상황을 가정해 표현을 직접 사용합니다."],
+    ["문장 교정", "전달력을 높이도록 문장과 표현을 점검합니다."],
+  ],
+  travel: [
+    ["여행 상황 선정", "공항과 숙소 등 먼저 준비할 상황을 고릅니다."],
+    ["필수 표현 학습", "상황별 질문과 답변에 필요한 표현을 익힙니다."],
+    ["상황 대화", "여행 장면을 가정해 짧은 대화를 이어 갑니다."],
+    ["반복 연습", "필요한 표현이 자연스럽게 나오도록 다시 연습합니다."],
+  ],
+};
+
+// 템플릿이 실수로 줄어들면 페이지를 만들기 전에 바로 알려줍니다.
+for (const [name, patterns] of Object.entries(DESCRIPTION_PATTERNS)) {
+  if (patterns.length < 8) throw new Error(`${name} description 패턴은 최소 8개가 필요합니다.`);
+}
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let value = "";
+  let quoted = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    const next = text[index + 1];
+    if (character === '"' && quoted && next === '"') { value += '"'; index += 1; }
+    else if (character === '"') quoted = !quoted;
+    else if (character === "," && !quoted) { row.push(value); value = ""; }
+    else if ((character === "\n" || character === "\r") && !quoted) {
+      if (character === "\r" && next === "\n") index += 1;
+      row.push(value);
+      if (row.some((cell) => cell.trim() !== "")) rows.push(row);
+      row = [];
+      value = "";
+    } else value += character;
+  }
+  if (value.length || row.length) { row.push(value); rows.push(row); }
+  return rows;
+}
+
+function escapeHtml(value = "") {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;",
+  })[character]);
+}
+
+function normalizeSlug(value) {
+  const slug = String(value || "").trim().replace(/^\/+|\/+$/g, "").replace(/^pages\//i, "");
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9-]*$/.test(slug)) throw new Error(`사용할 수 없는 slug입니다: ${slug}`);
+  return slug;
+}
+
+function renderTemplate(template, values) {
+  return template.replace(/{{([A-Z0-9_]+)}}/g, (match, key) => {
+    if (!(key in values)) throw new Error(`템플릿 값이 없습니다: ${key}`);
+    return values[key];
+  });
+}
+
+/** 공통 템플릿에서 사용할 로고·아이콘·OG 태그를 한 설정에서 가져옵니다. */
+function brandTemplateValues(page = null, baseUrl = productionUrl) {
+  const faviconIco = resolveEntry(root, assetConfig.favicon.ico);
+  const faviconSvg = resolveEntry(root, assetConfig.favicon.svg);
+  const appleTouch = resolveEntry(root, assetConfig.favicon.appleTouch);
+  const faviconTags = [
+    faviconIco.src ? `<link rel="icon" href="${escapeHtml(faviconIco.src)}">` : "",
+    faviconSvg.src ? `<link rel="alternate icon" href="${escapeHtml(faviconSvg.src)}" type="image/svg+xml">` : "",
+    appleTouch.src ? `<link rel="apple-touch-icon" href="${escapeHtml(appleTouch.src)}">` : "",
+    assetConfig.favicon.manifest ? `<link rel="manifest" href="${escapeHtml(assetConfig.favicon.manifest)}">` : "",
+  ].filter(Boolean).join("\n  ");
+  return {
+    BRAND_NAME: brandAssets.name,
+    BRAND_LOGO_MARK: renderLogo(resolveLogoAsset("mark", root)),
+    BRAND_LOGO_FULL: renderLogo(resolveLogoAsset("default", root)),
+    BRAND_FAVICON_TAGS: faviconTags,
+    OG_IMAGE_TAGS: renderOgTags(resolveOgAsset(page, root), baseUrl),
+  };
+}
+
+function makeBaseUrl(domain) {
+  const cleanDomain = String(domain || productionUrl).trim().replace(/\/$/, "");
+  return /^https?:\/\//i.test(cleanDomain) ? cleanDomain : `https://${cleanDomain}`;
+}
+
+function firstValue(object, ...keys) {
+  for (const key of keys) {
+    if (object[key] !== undefined && String(object[key]).trim() !== "") return String(object[key]).trim();
+  }
+  return "";
+}
+
+function asSentence(value) {
+  const clean = String(value || "").trim();
+  if (!clean) return "";
+  return /[.!?。]$/.test(clean) ? clean : `${clean}.`;
+}
+
+// 검색의도는 완성 문장보다 짧은 구절로 입력되는 경우가 많아 문장으로 감쌉니다.
+function asIntentSentence(value) {
+  const clean = String(value || "").trim().replace(/[.!?。]+$/, "");
+  return clean ? `수업은 “${clean}”이라는 필요를 반영합니다.` : "";
+}
+
+function stableHash(value) {
+  let hash = 2166136261;
+  for (const character of String(value)) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function shortPhrase(value, maximumLength = 32) {
+  const clean = String(value || "").trim().replace(/[.!?。]+$/, "").replace(/\s+/g, " ");
+  if (clean.length <= maximumLength) return clean;
+  const sliced = clean.slice(0, maximumLength + 1);
+  const lastSpace = sliced.lastIndexOf(" ");
+  return `${lastSpace > maximumLength * 0.55 ? sliced.slice(0, lastSpace) : clean.slice(0, maximumLength)}…`;
+}
+
+function toneAdjective(tone) {
+  return ({
+    "친근형": "편안한", "신뢰형": "차분하고 분명한", "전문형": "체계적인",
+    "목표달성형": "목표 중심", "차분형": "차분한", "코칭형": "함께 점검하는",
+  })[tone] || "차분한";
+}
+
+function fitMetaDescription(value, context) {
+  let result = String(value || "").replace(/\s+/g, " ").trim();
+  if (result.length > 150) {
+    const sentences = result.match(/[^.!?。]+[.!?。]/g) || [result];
+    result = "";
+    for (const sentence of sentences) {
+      const candidate = `${result} ${sentence.trim()}`.trim();
+      if (candidate.length <= 150) result = candidate;
+    }
+  }
+  if (result.length < 80) {
+    const extra = `수업 초점은 “${shortPhrase(context.focus)}”입니다.`;
+    if (`${result} ${extra}`.length <= 150) result = `${result} ${extra}`;
+  }
+  if (result.length < 80) {
+    const extra = `${context.toneLead} 필요한 내용을 순서대로 안내합니다.`;
+    if (`${result} ${extra}`.length <= 150) result = `${result} ${extra}`;
+  }
+  return result.trim();
+}
+
+function inferSuffix(raw, detailKeyword, keyword) {
+  const explicit = firstValue(raw, "suffix", "접미어");
+  if (explicit) return explicit;
+  const candidates = ["과외", "수업", "레슨", "준비", "교육"];
+  return candidates.find((candidate) => String(keyword).includes(`${detailKeyword} ${candidate}`) || String(keyword).includes(`${detailKeyword}${candidate}`)) || "";
+}
+
+function normalizeTone(value) {
+  const tone = String(value || "").trim();
+  return TONE_PROFILES[tone] ? tone : "차분형";
+}
+
+function normalizeContentTemplate(page) {
+  // 새 final의 template 값을 최우선으로 사용합니다.
+  const explicitTemplate = String(page.template || "").trim().toLowerCase();
+  if (Object.hasOwn(DESCRIPTION_PATTERNS, explicitTemplate)) return explicitTemplate;
+  // template 값이 비어 있는 기존 CSV만 검색의도와 수업 자료에서 종류를 보조 판단합니다.
+  const value = `${page.template} ${page.category} ${page.detailKeyword} ${page.title} ${page.searchIntent} ${page.summary} ${page.lessonFocus}`.toLowerCase();
+  if (/travel|여행/.test(value)) return "travel";
+  if (/business|비즈니스|업무|직장/.test(value)) return "business";
+  if (/exam|시험|자격|토익|toeic|토플|teps/.test(value)) return "exam";
+  return "conversation";
+}
+
+function normalizePage(raw, index) {
+  const province = firstValue(raw, "province", "시도");
+  const region = firstValue(raw, "region", "지역");
+  const target = firstValue(raw, "target", "대상");
+  const detailKeyword = firstValue(raw, "detail_keyword", "세부키워드", "subject") || "회화";
+  const keyword = firstValue(raw, "keyword", "최종키워드", "title") || `${region} ${target} ${detailKeyword}`.replace(/\s+/g, " ").trim();
+  const title = firstValue(raw, "title") || keyword;
+  return {
+    ...raw,
+    _source: raw,
+    id: firstValue(raw, "id") || String(index + 1),
+    domain: firstValue(raw, "domain") || productionUrl,
+    slug: normalizeSlug(firstValue(raw, "slug")),
+    status: firstValue(raw, "status") || "publish",
+    language: firstValue(raw, "language") || "ko",
+    province,
+    region,
+    target,
+    subject: firstValue(raw, "subject") || detailKeyword,
+    detailKeyword,
+    suffix: inferSuffix(raw, detailKeyword, keyword),
+    category: firstValue(raw, "category", "분류"),
+    keyword,
+    title,
+    providedDescription: firstValue(raw, "description"),
+    legacyDescription: firstValue(raw, "description"),
+    searchIntent: firstValue(raw, "search_intent", "검색의도"),
+    summary: firstValue(raw, "summary", "핵심고민"),
+    lessonFocus: firstValue(raw, "lesson_focus", "수업초점"),
+    lessonMethod: firstValue(raw, "lesson_method", "수업방식"),
+    lessonResult: firstValue(raw, "lesson_result", "기대변화"),
+    rawTone: firstValue(raw, "tone", "톤"),
+    tone: normalizeTone(firstValue(raw, "tone", "톤")),
+    template: firstValue(raw, "template", "본문템플릿"),
+  };
+}
+
+function validateFinalContent(page) {
+  // template 열이 있는 새 final만 엄격히 검사하고, 예전 CSV는 기본 문장으로 호환합니다.
+  if (!page.template) return;
+  const required = {
+    search_intent: page.searchIntent, summary: page.summary, lesson_focus: page.lessonFocus,
+    lesson_method: page.lessonMethod, lesson_result: page.lessonResult, tone: page.rawTone,
+  };
+  for (const [name, value] of Object.entries(required)) {
+    if (!String(value || "").trim()) throw new Error(`${page.slug}: ${name} 값이 비어 있습니다.`);
+  }
+  const template = page.template.toLowerCase();
+  if (!Object.hasOwn(DESCRIPTION_PATTERNS, template)) throw new Error(`${page.slug}: template 값이 올바르지 않습니다.`);
+  if (Object.hasOwn(DESCRIPTION_PATTERNS, page.searchIntent.toLowerCase())) {
+    throw new Error(`${page.slug}: search_intent에 template 이름이 들어 있습니다.`);
+  }
+}
+
+function makeContentContext(page) {
+  const service = `${page.detailKeyword}${page.suffix ? ` ${page.suffix}` : ""}`;
+  const audience = page.target ? `${page.target} 학습자` : "학습자";
+  const location = [page.province, page.region].filter(Boolean).join(" ");
+  const intent = page.searchIntent || `${location}에서 ${service} 수업을 찾는 분`;
+  const concern = page.summary || page.legacyDescription || `${service} 학습 방향을 정하기 어려운 상황`;
+  const focus = page.lessonFocus || `${service}의 기초와 실제 활용`;
+  const method = page.lessonMethod || "현재 수준을 확인한 뒤 설명과 연습 및 복습을 순서대로 진행합니다.";
+  const result = page.lessonResult || "배운 내용을 필요한 상황에서 스스로 활용하는 것을 목표로 합니다.";
+  const toneProfile = TONE_PROFILES[page.tone];
+  return {
+    province: page.province,
+    city: page.region,
+    region: location,
+    target: page.target,
+    audience,
+    service,
+    intent,
+    concern,
+    focus,
+    method,
+    result,
+    tone: page.tone,
+    toneLead: toneProfile.lead,
+    directTone: toneProfile.direct,
+    faqTone: toneProfile.faq,
+    intentSentence: asIntentSentence(intent),
+    concernSentence: asSentence(concern),
+    methodSentence: asSentence(method),
+    resultSentence: asSentence(result),
+  };
+}
+
+function makeDescription(page, context) {
+  const templateType = normalizeContentTemplate(page);
+  const patterns = DESCRIPTION_PATTERNS[templateType];
+  const patternIndex = stableHash(page.slug) % patterns.length;
+  let description = patterns[patternIndex](context).replace(/\s+/g, " ").trim();
+  // 누구를 위한 수업인지 답한 첫 문장 바로 뒤에 톤을 자연스럽게 표시합니다.
+  const firstSentenceEnd = description.indexOf(".");
+  if (firstSentenceEnd !== -1) {
+    description = `${description.slice(0, firstSentenceEnd + 1)} ${toneAdjective(page.tone)} 방식으로 진행합니다.${description.slice(firstSentenceEnd + 1)}`;
+  }
+  return fitMetaDescription(description, context);
+}
+
+function makeQuestionHeading(page, context) {
+  const type = normalizeContentTemplate(page);
+  if (type === "exam") return `${context.service} 준비는 어떤 순서로 진행해야 할까요?`;
+  if (type === "business") return `업무에 필요한 ${context.service} 수업은 어떻게 진행될까요?`;
+  if (type === "travel") return `여행 전에 ${context.service}에서 무엇을 준비하면 좋을까요?`;
+  return `${context.service} 수업에서는 무엇을 먼저 연습할까요?`;
+}
+
+function makeFaqs(page, context) {
+  const generated = page.intelligence.faqs;
+  return generated.map((faq, index) => ({
+    question: firstValue(page, `faq_question_${index + 1}`) || faq.question,
+    answer: firstValue(page, `faq_answer_${index + 1}`) || faq.answer,
+  }));
+}
+
+function templateLabel(type) {
+  return ({ conversation: "회화", exam: "시험 대비", business: "비즈니스", travel: "여행 회화" })[type] || "맞춤 수업";
+}
+
+function processHtml(type) {
+  return (PROCESS_STEPS[type] || PROCESS_STEPS.conversation)
+    .map(([title, description]) => `<article class="process-step"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(description)}</p></article>`)
+    .join("");
+}
+
+function linkChipsHtml(slugs, pageLookup, labelOf = (page) => page.title) {
+  return (slugs || []).map((slug) => {
+    const linked = pageLookup.get(slug);
+    if (!linked) return "";
+    return `<li><a href="/${linked.slug}/">${escapeHtml(labelOf(linked))}</a></li>`;
+  }).join("");
+}
+
+function aiSummaryHtml(page, context) {
+  const audience = page.target ? `${page.target} 학습자` : `${context.service} 수업을 찾는 학습자`;
+  const points = [
+    `<strong>추천 대상:</strong> ${escapeHtml(`${page.region}에서 ${audience}로 수업을 알아보는 분`)}`,
+    `<strong>소개 수업:</strong> ${escapeHtml(`${context.service}의 현재 수준과 목표를 반영한 맞춤 수업`)}`,
+    `<strong>도움이 되는 상황:</strong> ${escapeHtml(context.concern)}`,
+    `<strong>핵심 학습:</strong> ${escapeHtml(context.focus)}`,
+    `<strong>진행 방향:</strong> ${escapeHtml(context.method)}`,
+  ];
+  return `<section class="section ai-summary-section" aria-labelledby="ai-summary-title"><div class="container"><div class="ai-summary"><p class="section-kicker">AI Summary</p><h2 id="ai-summary-title">${escapeHtml(page.region)} ${escapeHtml(context.service)}, 누구에게 어떤 도움이 될까요?</h2><p>${escapeHtml(page.intelligence.intro)}</p><ul>${points.map((point) => `<li>${point}</li>`).join("")}</ul></div></div></section>`;
+}
+
+/** 페이지마다 선택된 예시를 실제 수업 장면으로 보여줍니다. */
+function examplesHtml(page, context) {
+  const examples = page.intelligence.examples
+    .map((example, index) => `<article class="panel"><div class="panel-icon">${String(index + 1).padStart(2, "0")}</div><h3>${escapeHtml(context.service)} 활용 예시 ${index + 1}</h3><p>${escapeHtml(example)}</p></article>`)
+    .join("");
+  return `<section class="section content-examples" aria-labelledby="content-examples-title"><div class="container"><div class="section-heading"><p class="section-kicker">수업 활용 예시</p><h2 id="content-examples-title">${escapeHtml(page.region)} ${escapeHtml(context.service)} 수업에서는 무엇을 연습하나요?</h2><p class="section-intro">학습 목적과 주제에 맞춰 실제로 적용할 수 있는 장면을 선택합니다.</p></div><div class="management-grid">${examples}</div></div></section>`;
+}
+
+function keyTakeawaysHtml(page, context) {
+  const takeaways = [
+    `${page.region}에서 ${page.target || "학습자"}에게 맞는 ${context.service} 수업을 안내합니다.`,
+    `현재 어려움은 “${shortPhrase(context.concern, 54)}”인지 먼저 확인합니다.`,
+    `수업은 ${shortPhrase(context.focus, 58)} 내용을 중심으로 구성합니다.`,
+    `${shortPhrase(context.method, 64)} 방식으로 진행합니다.`,
+    `목표는 ${shortPhrase(context.result, 58)} 변화입니다.`,
+  ];
+  return `<section class="section key-takeaways-section" aria-labelledby="key-takeaways-title"><div class="container"><div class="section-heading"><p class="section-kicker">Key Takeaways</p><h2 id="key-takeaways-title">${escapeHtml(page.region)} ${escapeHtml(context.service)} 핵심 요약</h2><p class="section-intro">이 페이지에서 확인할 내용을 다섯 가지로 정리했습니다.</p></div><ul class="key-takeaways">${takeaways.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div></section>`;
+}
+
+function relatedNavigationHtml(page, related, pageLookup) {
+  const groups = [
+    [`${page.region}의 다른 수업`, related.sameRegion, (linked) => linked.title],
+    [`${page.subject} 수업을 제공하는 다른 지역`, related.sameSubject, (linked) => linked.title],
+    [`${page.subject} 대상별 수업`, related.sameTarget, (linked) => linked.title],
+    [`${page.province}의 다른 인기 지역`, related.sameProvince, (linked) => linked.region],
+    [`${page.subject} 관련 학습 목적`, related.sameIntent, (linked) => linked.title],
+  ].filter(([, slugs]) => slugs && slugs.length);
+
+  const content = groups.map(([title, slugs, labelOf]) => `<section class="internal-link-group"><h3>${escapeHtml(title)}</h3><ul class="internal-link-chips">${linkChipsHtml(slugs, pageLookup, labelOf)}</ul></section>`).join("");
+  return `<section class="section internal-links-section" id="related"><div class="container"><div class="section-heading"><p class="section-kicker">자동 내부링크</p><h2>${escapeHtml(page.region)} ${escapeHtml(page.subject)}와 함께 살펴볼 수업</h2><p class="section-intro">지역, 과목, 대상과 학습 목적이 가까운 페이지를 관련도 순서로 연결했습니다.</p></div><div class="internal-link-groups">${content}</div></div></section>`;
+}
+
+function hubGroupHtml(icon, title, hubs, labelOf) {
+  if (!hubs.length) return "";
+  const links = hubs.slice(0, 8).map((hub) => `<li><a href="${escapeHtml(hub.url || `/${hub.slug}/`)}">${escapeHtml(labelOf(hub))}</a></li>`).join("");
+  return `<section class="hub-group"><h3><span aria-hidden="true">${icon}</span> ${escapeHtml(title)}</h3><ul class="hub-link-chips">${links}</ul></section>`;
+}
+
+function discoveryNavigationHtml(page, related, hubIndex, pageLookup) {
+  const currentProvinceHub = hubIndex.province.find((hub) => hub.value === page.province);
+  const currentRegionHub = hubIndex.region.find((hub) => hub.province === page.province && hub.region === page.region);
+  const sameProvinceRegions = hubIndex.region.filter((hub) => hub.province === page.province && hub.region !== page.region);
+  const localHubs = [
+    currentProvinceHub ? { ...currentProvinceHub, region: currentProvinceHub.value } : null,
+    currentRegionHub,
+    ...sameProvinceRegions,
+  ].filter(Boolean);
+  const regionHubs = localHubs.length
+    ? [...new Map(localHubs.map((hub) => [hub.url, hub])).values()]
+    : hubIndex.province.map((hub) => ({ ...hub, region: hub.value }));
+  const hubGroups = [
+    hubGroupHtml("📍", `${page.subject} 지역별 보기`, regionHubs, (hub) => hub.region),
+    hubGroupHtml("📚", `${page.region} 과목별 보기`, hubIndex.subject, (hub) => hub.value),
+    hubGroupHtml("👨", `${page.subject} 대상별 보기`, hubIndex.target, (hub) => hub.value),
+    hubGroupHtml("🎯", `${page.region} 시험별 보기`, hubIndex.exam, (hub) => hub.value),
+  ].join("");
+  const popular = linkChipsHtml(related.popularRelated, pageLookup);
+  return `<section class="section section-soft recommendation-navigation" aria-labelledby="recommendation-navigation-title"><div class="container"><div class="section-heading"><p class="section-kicker">추천 탐색</p><h2 id="recommendation-navigation-title">${escapeHtml(page.region)} ${escapeHtml(page.subject)} 다음 수업 탐색</h2><p class="section-intro">지역과 과목 및 대상 Hub를 통해 필요한 수업을 계속 탐색할 수 있습니다.</p></div><div class="hub-navigation-grid">${hubGroups}</div><div class="popular-related"><h3>다음으로 많이 찾는 페이지</h3><ul class="internal-link-chips">${popular}</ul></div></div></section>`;
+}
+
+function pickRepresentative(pages, predicate) {
+  return pages.find(predicate) || pages[0];
+}
+
+function pickFeaturedPages(pages) {
+  const limits = { conversation: 6, exam: 6, business: 3, travel: 3 };
+  const result = [];
+  for (const [type, limit] of Object.entries(limits)) {
+    const regions = new Set();
+    for (const page of pages) {
+      if (page.contentTemplate !== type || regions.has(page.region)) continue;
+      regions.add(page.region);
+      result.push(page);
+      if (regions.size >= limit) break;
+    }
+  }
+  return result;
+}
+
+function duplicateCount(values) {
+  const counts = new Map();
+  for (const value of values) counts.set(value, (counts.get(value) || 0) + 1);
+  return [...counts.values()].reduce((total, count) => total + Math.max(0, count - 1), 0);
+}
+
+/** pages.csv를 한 번 읽어 모든 빌드 단계가 함께 사용할 페이지 데이터로 만듭니다. */
+function loadPages() {
+  for (const requiredFile of [csvPath, templatePath]) {
+    if (!fs.existsSync(requiredFile)) throw new Error(`필요한 파일을 찾을 수 없습니다: ${requiredFile}`);
+  }
+
+  const csvText = fs.readFileSync(csvPath, "utf8").replace(/^\uFEFF/, "");
+  const [headerRow, ...dataRows] = parseCsv(csvText);
+  const headers = headerRow.map((header) => header.trim());
+  if (!headers.includes("slug")) throw new Error("pages.csv에 slug 열이 없습니다.");
+
+  const pages = dataRows
+    .map((values) => Object.fromEntries(headers.map((header, index) => [header, (values[index] || "").trim()])))
+    .map(normalizePage)
+    .filter((page) => page.status.toLowerCase() === "publish")
+    .map((page) => {
+      validateFinalContent(page);
+      const content = makeContentContext(page);
+      const contentTemplate = normalizeContentTemplate(page);
+      const generatedDescription = makeDescription(page, content);
+      const useFinalDescription = page.template && page.providedDescription.length >= 80 && page.providedDescription.length <= 150;
+      const preparedPage = {
+        ...page,
+        content,
+        contentTemplate,
+        description: useFinalDescription ? page.providedDescription : generatedDescription,
+        h1: page.keyword || page.title,
+      };
+      return { ...preparedPage, intelligence: createPageContent(preparedPage, content) };
+    });
+
+  const ids = new Set();
+  const slugs = new Set();
+  for (const page of pages) {
+    if (ids.has(page.id)) throw new Error(`중복 id가 있습니다: ${page.id}`);
+    if (slugs.has(page.slug.toLowerCase())) throw new Error(`중복 slug가 있습니다: ${page.slug}`);
+    ids.add(page.id);
+    slugs.add(page.slug.toLowerCase());
+  }
+
+  return {
+    pages,
+    template: fs.readFileSync(templatePath, "utf8"),
+    // CSV의 과거 domain 값과 관계없이 현재 운영 주소를 사용합니다.
+    baseUrl: makeBaseUrl(productionUrl),
+    duplicateResults: {
+      title: duplicateCount(pages.map((page) => page.title)),
+      description: duplicateCount(pages.map((page) => page.description)),
+      h1: duplicateCount(pages.map((page) => page.h1)),
+    },
+  };
+}
+
+/** 지역별 페이지와 메인페이지만 생성합니다. */
+function generatePages({ outputPath, data = loadPages(), relatedIndex, hubIndex, pageSlugs = null, generateHome = true }) {
+  const { pages, template, baseUrl } = data;
+  if (!relatedIndex || !hubIndex) throw new Error("related-index와 hub-index 데이터가 필요합니다.");
+  const pageLookup = new Map(pages.map((page) => [page.slug, page]));
+  fs.mkdirSync(outputPath, { recursive: true });
+
+const selectedPages = pageSlugs ? pages.filter((page) => pageSlugs.has(page.slug)) : pages;
+for (const [index, page] of selectedPages.entries()) {
+  const context = page.content;
+  const faqs = makeFaqs(page, context);
+  const faqHtml = faqs.map((faq, faqIndex) => `<details class="faq-item"${faqIndex === 0 ? " open" : ""}><summary><h3>${escapeHtml(faq.question)}</h3></summary><div class="faq-answer"><p>${escapeHtml(faq.answer)}</p></div></details>`).join("");
+  const related = relatedIndex[page.slug];
+  if (!related) throw new Error(`${page.slug}: related-index 결과가 없습니다.`);
+  const relatedHtml = relatedNavigationHtml(page, related, pageLookup);
+  const discoveryHtml = discoveryNavigationHtml(page, related, hubIndex, pageLookup);
+  const aiSummary = aiSummaryHtml(page, context);
+  const keyTakeaways = keyTakeawaysHtml(page, context);
+  const lessonExamples = examplesHtml(page, context);
+  const canonicalUrl = `${baseUrl}/${page.slug}/`;
+  const directAnswer = page.intelligence.intro;
+  const categoryName = templateLabel(page.contentTemplate);
+  const locationName = [page.province, page.region].filter(Boolean).join(" ");
+  const breadcrumbItems = [{ "@type": "ListItem", position: 1, name: "홈", item: `${baseUrl}/` }];
+  if (page.province) breadcrumbItems.push({ "@type": "ListItem", position: 2, name: page.province });
+  breadcrumbItems.push({ "@type": "ListItem", position: breadcrumbItems.length + 1, name: page.title, item: canonicalUrl });
+  const breadcrumbMiddle = page.province ? `<li>${escapeHtml(page.province)}</li>` : "";
+  const structuredData = makePageSchema({ canonicalUrl, page, locationName, context, baseUrl, faqs, breadcrumbItems });
+  const contactUrl = "/#consultation";
+  const eyebrow = [page.province, page.region, page.target || "전체 대상", categoryName].filter(Boolean).map(escapeHtml).join(" · ");
+  const pageAsset = resolvePageAsset(page, root);
+  const pageAssetAlt = `${page.region} ${page.subject} 맞춤 수업 안내`;
+  const pageMedia = renderImageBox(pageAsset, `page-hero-media asset-${pageAsset.key}`, { alt: pageAssetAlt });
+  const main = `<section class="hero"><div class="container"><nav class="breadcrumb" aria-label="현재 위치"><ol><li><a href="/">홈</a></li>${breadcrumbMiddle}<li aria-current="page">${escapeHtml(page.title)}</li></ol></nav><div class="hero-layout"><div><p class="eyebrow">${eyebrow}</p><h1>${escapeHtml(page.h1)}</h1><p class="lead">${escapeHtml(page.description)}</p><div class="hero-actions"><a class="button" href="${contactUrl}">${escapeHtml(page.intelligence.cta.label)}</a><a class="button button-secondary" href="#process">수업 진행 방법 보기</a></div></div><aside class="hero-panel" aria-label="수업 신뢰 정보">${pageMedia}<h2>${escapeHtml(page.region)} ${escapeHtml(context.service)} 수업 전 확인할 내용</h2><ul class="trust-list"><li>1:1 개별 맞춤</li><li>현재 수준에 맞춘 수업</li><li>회화·시험 목적별 관리</li><li>온라인 상담 가능</li></ul></aside></div></div></section>
+  ${aiSummary}
+  <section class="info-strip" aria-label="핵심 수업 정보"><div class="container info-grid"><article class="info-card"><p class="number">01</p><h2>${escapeHtml(page.region)} 추천 대상</h2><p>${escapeHtml(context.intent)}</p></article><article class="info-card"><p class="number">02</p><h2>${escapeHtml(context.service)} 수업 초점</h2><p>${escapeHtml(context.focus)}</p></article><article class="info-card"><p class="number">03</p><h2>${escapeHtml(context.service)} 진행 방식</h2><p>${escapeHtml(context.method)}</p></article><article class="info-card"><p class="number">04</p><h2>${escapeHtml(context.service)} 기대 변화</h2><p>${escapeHtml(context.result)}</p></article></div></section>
+  <section class="section" id="overview"><div class="container"><div class="section-heading"><p class="section-kicker">수업이 필요한 이유</p><h2>${escapeHtml(makeQuestionHeading(page, context))}</h2></div><div class="answer-box reading" aria-label="수업에 대한 직접 답변"><p class="answer-label">직접 답변</p><p>${escapeHtml(directAnswer)}</p><p>${escapeHtml(context.intent)}</p></div></div></section>
+  <section class="section section-soft" id="process"><div class="container"><div class="section-heading"><p class="section-kicker">4단계 수업 과정</p><h2>${escapeHtml(page.region)} ${escapeHtml(context.service)} 수업은 어떻게 진행되나요?</h2><p class="section-intro">${escapeHtml(page.intelligence.lesson)}</p></div><div class="process-grid">${processHtml(page.contentTemplate)}</div><div class="mid-cta"><div><h2>${escapeHtml(page.intelligence.cta.title)}</h2><p>${escapeHtml(page.intelligence.cta.text)}</p></div><a class="button" href="${contactUrl}">${escapeHtml(page.intelligence.cta.label)}</a></div></div></section>
+  <section class="section" id="management"><div class="container"><div class="section-heading"><p class="section-kicker">${escapeHtml(categoryName)} 학습 관리</p><h2>${escapeHtml(page.region)} ${escapeHtml(context.service)} 수업에서 무엇을 관리하나요?</h2><p class="section-intro">${escapeHtml(page.intelligence.benefit)}</p></div><div class="management-grid"><article class="panel"><div class="panel-icon">01</div><h3>${escapeHtml(context.service)} 학습 전 핵심 고민</h3><p>${escapeHtml(context.concern)}</p></article><article class="panel"><div class="panel-icon">02</div><h3>${escapeHtml(context.service)} 수업의 학습 초점</h3><p>${escapeHtml(context.focus)}</p></article><article class="panel"><div class="panel-icon">03</div><h3>${escapeHtml(context.service)} 수업과 복습 방법</h3><p>${escapeHtml(context.method)} ${escapeHtml(context.result)}</p></article></div></div></section>
+  ${lessonExamples}
+  <section class="section section-soft" id="fit"><div class="container"><div class="section-heading"><p class="section-kicker">추천 대상</p><h2>${escapeHtml(page.region)} ${escapeHtml(context.service)}, 이런 분께 추천합니다</h2></div><ul class="fit-list"><li>${escapeHtml(context.intent)}</li><li>${escapeHtml(context.concern)}</li><li>${escapeHtml(context.focus)} 내용이 필요한 분</li><li>${escapeHtml(context.result)} 변화를 원하는 분</li></ul></div></section>
+  ${relatedHtml}
+  <section class="section section-soft" id="faq"><div class="container"><div class="section-heading"><p class="section-kicker">자주 묻는 질문</p><h2>${escapeHtml(page.region)} ${escapeHtml(context.service)} 수업 전 자주 묻는 질문</h2></div><div class="faq-list">${faqHtml}</div>${page.updated_at ? `<p class="updated">마지막 내용 확인: ${escapeHtml(page.updated_at)}</p>` : ""}</div></section>
+  <section class="section" id="consultation"><div class="container"><div class="cta"><h2>${escapeHtml(firstValue(page, "cta_title") || page.intelligence.cta.title)}</h2><p>${escapeHtml(firstValue(page, "cta_text") || page.intelligence.cta.text)}</p><a class="button" href="${contactUrl}">${escapeHtml(page.intelligence.cta.label)}</a></div></div></section>
+  ${keyTakeaways}
+  ${discoveryHtml}`;
+  const html = renderTemplate(template, {
+    ...brandTemplateValues(page, baseUrl),
+    LANG: escapeHtml(page.language), TITLE: escapeHtml(page.title), DESCRIPTION: escapeHtml(page.description),
+    CANONICAL_URL: escapeHtml(canonicalUrl), STRUCTURED_DATA: structuredData,
+    NAV_LINK: "/#lessons", NAV_TEXT: "다른 지역 보기", MAIN: main,
+    MOBILE_CONTACT_URL: contactUrl,
+    FOOTER_LINK: "/", FOOTER_TEXT: "메인으로 돌아가기",
+  });
+  const pageFolder = path.join(outputPath, page.slug);
+  fs.mkdirSync(pageFolder, { recursive: true });
+  fs.writeFileSync(path.join(pageFolder, "index.html"), html, "utf8");
+  if ((index + 1) % 500 === 0) console.log(`진행: ${index + 1}개 생성`);
+}
+
+if (!generateHome) return data;
+
+const englishPage = pickRepresentative(pages, (page) => page.contentTemplate === "conversation" && /영어/.test(page.detailKeyword));
+const japanesePage = pickRepresentative(pages, (page) => page.contentTemplate === "conversation" && /일본어/.test(page.detailKeyword));
+const examPage = pickRepresentative(pages, (page) => page.contentTemplate === "exam");
+const businessPage = pickRepresentative(pages, (page) => page.contentTemplate === "business");
+const categoryCards = [["영어회화", "일상과 여행에서 필요한 영어 말하기를 현재 수준부터 연습합니다.", englishPage, englishImage], ["일본어회화", "글자와 기초 표현부터 상황별 일본어 대화를 연결합니다.", japanesePage, japaneseImage], ["시험 대비", "목표와 현재 수준을 확인하고 영역별 학습과 오답 관리를 진행합니다.", examPage, examImage], ["비즈니스", "회의와 이메일 등 실제 업무에 필요한 표현을 목적에 맞춰 연습합니다.", businessPage, businessImage]].map(([title, description, page, image]) => `<a class="category-card" href="/${page.slug}/">${renderImageBox(image, "image-box-square")}<div class="category-card-body"><p class="card-meta">맞춤 수업 찾기</p><h3>${title}</h3><p>${description}</p><span class="text-link">대표 수업 보기 →</span></div></a>`).join("");
+const regionMap = new Map();
+for (const page of pages) {
+  const key = `${page.province}|${page.region}`;
+  if (!regionMap.has(key)) regionMap.set(key, { province: page.province, region: page.region, page });
+}
+const provinceMap = new Map();
+for (const item of regionMap.values()) {
+  const province = item.province || "기타 지역";
+  if (!provinceMap.has(province)) provinceMap.set(province, []);
+  provinceMap.get(province).push(item);
+}
+const provinceGroups = [...provinceMap.entries()].sort(([provinceA], [provinceB]) => {
+  const orderA = PROVINCE_ORDER.indexOf(provinceA);
+  const orderB = PROVINCE_ORDER.indexOf(provinceB);
+  if (orderA === -1 && orderB === -1) return provinceA.localeCompare(provinceB, "ko");
+  if (orderA === -1) return 1;
+  if (orderB === -1) return -1;
+  return orderA - orderB;
+});
+const wizardRegionDirectory = `<template id="wizard-region-directory-template"><details class="wizard-region-directory"><summary>지역 페이지에서 직접 찾기</summary><div class="wizard-province-list">${provinceGroups.map(([province, regions]) => `<section class="wizard-province-group"><h4>${escapeHtml(province)}</h4><ul>${regions.map(({ region, page }) => `<li><a href="/${page.slug}/">${escapeHtml(region)}</a></li>`).join("")}</ul></section>`).join("")}</div></details></template>`;
+const reviewCardsHtml = reviews.map((review, index) => `<article class="review-card" data-review-slide data-review-id="${escapeHtml(review.id)}" role="group" aria-roledescription="슬라이드" aria-label="${index + 1} / ${reviews.length}"><div class="review-rating" aria-label="5점 만점에 ${review.rating}점"><span aria-hidden="true">${"★".repeat(review.rating)}${"☆".repeat(5 - review.rating)}</span></div><div class="review-person"><strong>${escapeHtml(review.name)} · ${escapeHtml(review.role)}</strong><span>${escapeHtml(review.category)}</span></div><blockquote><p>${escapeHtml(review.review)}</p></blockquote></article>`).join("");
+const reviewCarouselHtml = `<section class="section reviews-section" aria-labelledby="reviews-title" data-review-carousel><div class="container"><div class="review-carousel-heading"><div class="section-heading"><p class="section-kicker">수강 후기</p><h2 id="reviews-title">학습자가 전하는 수업 이야기</h2><p class="section-intro">각자의 목표에 맞춰 수업을 진행하며 느낀 점을 확인해 보세요.</p></div><div class="review-carousel-controls" role="group" aria-label="후기 이동"><button class="review-arrow" type="button" data-review-prev aria-label="이전 후기" aria-controls="review-carousel-viewport"><span aria-hidden="true">←</span></button><button class="review-arrow" type="button" data-review-next aria-label="다음 후기" aria-controls="review-carousel-viewport"><span aria-hidden="true">→</span></button></div></div><div class="review-carousel-viewport" id="review-carousel-viewport" role="region" aria-roledescription="캐러셀" aria-label="수강 후기 11개" tabindex="0"><div class="review-carousel-track" data-review-track>${reviewCardsHtml}</div></div><div class="review-carousel-dots" data-review-dots role="group" aria-label="후기 슬라이드 선택"></div><p class="sr-only" data-review-status aria-live="polite" aria-atomic="true"></p></div></section>`;
+const homeFaqs = [{ question: "처음 배우는 사람도 수업을 시작할 수 있나요?", answer: "네. 현재 수준과 학습 목적을 먼저 확인한 뒤 필요한 기초 내용부터 순서대로 진행합니다." }, { question: "회화와 시험 대비 수업은 어떻게 다른가요?", answer: "회화는 듣기와 상황별 말하기를, 시험 대비는 영역별 개념과 문제풀이 및 오답 관리를 중심으로 구성합니다." }, { question: "상담할 때 무엇을 알려주면 되나요?", answer: "배우려는 과목과 현재 수준, 원하는 목표, 가능한 시간을 알려주시면 수업 방향을 안내합니다." }];
+const homeFaqHtml = homeFaqs.map((faq, index) => `<details class="faq-item"${index === 0 ? " open" : ""}><summary><h3>${faq.question}</h3></summary><div class="faq-answer"><p>${faq.answer}</p></div></details>`).join("");
+const homeContactUrl = "#consultation";
+const consultationFormHtml = `<section class="section home-cta-section consultation-section" id="consultation" aria-labelledby="consultation-title"><div class="container consultation-shell"><div class="consultation-heading"><p class="cta-kicker">무료 상담 신청</p><h2 id="consultation-title">나에게 맞는 수업,<br>무료 상담으로 시작해보세요.</h2><p>희망하는 수업과 현재 고민을 남겨주시면<br>확인 후 순차적으로 연락드리겠습니다.</p></div><form class="consultation-form-card" name="consultation" method="POST" action="/" data-netlify="true" netlify-honeypot="bot-field" data-consultation-form novalidate><input type="hidden" name="form-name" value="consultation"><input type="hidden" name="sourcePage" value="/"><input type="hidden" name="submittedAt" value=""><p class="honeypot-field"><label>이 항목은 비워 주세요.<input name="bot-field" tabindex="-1" autocomplete="off"></label></p><div class="form-field"><label for="consultation-phone">연락처 <span class="required-mark" aria-hidden="true">*</span></label><input id="consultation-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required pattern="01[016789]-?[0-9]{3,4}-?[0-9]{4}" placeholder="연락받을 번호를 입력해 주세요" aria-describedby="consultation-phone-error"><p class="form-error" id="consultation-phone-error" data-error-for="phone" aria-live="polite"></p></div><div class="form-field"><label for="consultation-lesson">희망 수업 <span class="required-mark" aria-hidden="true">*</span></label><select id="consultation-lesson" name="lesson" required aria-describedby="consultation-lesson-error"><option value="">희망 수업을 선택해 주세요</option><option value="영어회화">영어회화</option><option value="비즈니스 영어">비즈니스 영어</option><option value="초등 영어">초등 영어</option><option value="중등 영어">중등 영어</option><option value="고등 영어">고등 영어</option><option value="TOEIC">TOEIC</option><option value="TOEIC Speaking">TOEIC Speaking</option><option value="OPIC">OPIC</option><option value="IELTS">IELTS</option><option value="TOEFL">TOEFL</option><option value="일본어회화">일본어회화</option><option value="JLPT">JLPT</option><option value="JPT">JPT</option><option value="기타">기타</option></select><p class="form-error" id="consultation-lesson-error" data-error-for="lesson" aria-live="polite"></p></div><div class="form-field"><label for="consultation-message">문의 내용 <span class="required-mark" aria-hidden="true">*</span></label><textarea id="consultation-message" name="message" required placeholder="현재 고민, 학습 목표, 희망하는 수업 내용을 간단히 적어주세요." aria-describedby="consultation-message-error"></textarea><p class="form-error" id="consultation-message-error" data-error-for="message" aria-live="polite"></p></div><div class="form-field privacy-field"><label class="privacy-label" for="consultation-privacy"><input id="consultation-privacy" name="privacyConsent" type="checkbox" value="동의" required aria-describedby="consultation-privacy-error"><span>상담 진행을 위해 연락처, 희망 수업, 문의 내용을 수집합니다.<br>수집된 정보는 상담 목적으로만 사용되며 내부 정책에 따라 파기됩니다.</span></label><p class="form-error" id="consultation-privacy-error" data-error-for="privacyConsent" aria-live="polite"></p></div><button class="button button-primary consultation-submit" type="submit" data-submit-button>무료 상담 신청하기</button><div class="form-status" data-form-status role="status" aria-live="polite" tabindex="-1"></div></form></div></section>`;
+const homeMain = `<section class="hero home-hero"><div class="container home-hero-layout"><div class="home-hero-copy"><p class="eyebrow">전국 지역별 1:1 맞춤 수업</p><h1>기초회화부터<br>시험 대비까지,<br>나에게 맞는<br>수업을 만나보세요.</h1><p class="lead">영어·일본어 기초회화부터 TOEIC, OPIC, IELTS, TOEFL, JLPT까지, 현재 실력과 학습 목표에 맞는 맞춤 수업을 추천해드립니다.</p><div class="hero-actions"><a class="button" href="#lessons">지역별 수업 찾기</a><a class="button button-secondary" href="${homeContactUrl}">상담 신청하기</a></div><ul class="hero-points" aria-label="수업 핵심 특징"><li>1:1 맞춤 방향</li><li>목적별 수업 구성</li><li>온라인 상담 가능</li></ul></div>${renderPicture({ desktop: heroAssets.desktop, mobile: heroAssets.mobile, className: "image-box-hero", alt: heroAssets.desktop.alt })}</div></section>
+<section class="section home-categories" aria-labelledby="category-title"><div class="container"><div class="section-heading"><p class="section-kicker">수업 종류</p><h2 id="category-title">어떤 수업을 찾고 있나요?</h2><p class="section-intro">배우려는 목적에 가까운 수업부터 확인해 보세요.</p></div><div class="category-grid">${categoryCards}</div></div></section>
+<section class="section home-features" aria-labelledby="feature-title"><div class="container"><div class="section-heading"><p class="section-kicker">수업 특징</p><h2 id="feature-title">학습자에게 필요한 기준부터 확인합니다</h2><p class="section-intro">과장된 약속보다 현재 수준과 목표에 맞는 수업 방향을 분명하게 안내합니다.</p></div><div class="home-feature-grid"><article class="feature-card">${renderImageBox(featurePersonal, "image-box-feature")}<h3>1:1 맞춤 수업</h3><p>현재 수준과 목표를 확인해 필요한 학습 방향을 정합니다.</p></article><article class="feature-card">${renderImageBox(featureNationwide, "image-box-feature")}<h3>전국 지역별 수업</h3><p>지역별 수업 안내를 한곳에서 비교하고 확인할 수 있습니다.</p></article><article class="feature-card">${renderImageBox(featureManagement, "image-box-feature")}<h3>목표별 학습 관리</h3><p>회화와 시험 등 목적에 맞춰 학습 순서를 관리합니다.</p></article><article class="feature-card">${renderImageBox(featureLevelTest, "image-box-feature")}<h3>수업 가능</h3><p>자신의 현재 실력을 점검하고 맞춤형 학습 목표와 수업 방향을 함께 설정합니다.</p></article></div></div></section>
+<section class="section section-soft home-process-section" id="process"><div class="container"><div class="section-heading"><p class="section-kicker">수업 진행 과정</p><h2>수업은 네 단계로 진행됩니다</h2><p class="section-intro">상담부터 복습까지 필요한 과정을 차례대로 이어갑니다.</p></div><div class="process-grid"><article class="process-step"><span class="process-number">01</span>${renderImageBox(processLevelTest, "image-box-icon")}<h3>수준과 목표 확인</h3><p>배우려는 이유와 현재 어려움을 먼저 확인합니다.</p></article><article class="process-step"><span class="process-number">02</span>${renderImageBox(processPlan, "image-box-icon")}<h3>개인별 방향 설정</h3><p>목표에 필요한 학습 내용과 순서를 정합니다.</p></article><article class="process-step"><span class="process-number">03</span>${renderImageBox(processLesson, "image-box-icon")}<h3>설명과 실전 연습</h3><p>필요한 내용을 배우고 직접 사용해 봅니다.</p></article><article class="process-step"><span class="process-number">04</span>${renderImageBox(processFeedback, "image-box-icon")}<h3>피드백과 복습</h3><p>어려웠던 부분을 점검하고 다시 연습합니다.</p></article></div></div></section>
+<section class="section section-soft level-test-section" aria-labelledby="level-test-title"><div class="container"><div class="cta cta-layout level-test-cta"><div class="cta-content"><p class="cta-kicker">무료 레벨 테스트</p><h2 id="level-test-title">현재 실력을 확인하고 맞춤 학습 방향을 찾아보세요</h2><p>학습 목적과 어려운 부분을 확인해 시작하기 좋은 수업 방향을 안내합니다.</p><a class="button button-light" href="${homeContactUrl}">무료 레벨 테스트 신청</a></div>${renderImageBox(levelTestCtaImage, "image-box-cta")}</div></div></section>
+${wizardRegionDirectory}
+${reviewCarouselHtml}
+<section class="section home-faq" id="faq"><div class="container faq-layout"><div class="section-heading"><p class="section-kicker">FAQ</p><h2>수업을 찾기 전에 확인해 보세요</h2><p class="section-intro">자주 궁금해하는 내용을 먼저 정리했습니다.</p></div><div class="faq-list">${homeFaqHtml}</div></div></section>
+${consultationFormHtml}`;
+const homeHtml = renderTemplate(template, {
+  ...brandTemplateValues(null, baseUrl),
+  LANG: "ko", TITLE: "맞춤 회화 과외 | 지역별 일대일 수업",
+  DESCRIPTION: "지역과 학습 목표에 맞춘 성인 영어·일본어 회화 과외를 안내합니다.",
+  CANONICAL_URL: escapeHtml(`${baseUrl}/`),
+  STRUCTURED_DATA: makeJsonLd({ "@context": "https://schema.org", "@graph": [{ "@type": "WebSite", name: "김선생 회화 과외", url: `${baseUrl}/`, inLanguage: "ko" }, { "@type": "Organization", name: "김선생 회화 과외", url: `${baseUrl}/` }, { "@type": "FAQPage", mainEntity: homeFaqs.map((faq) => ({ "@type": "Question", name: faq.question, acceptedAnswer: { "@type": "Answer", text: faq.answer } })) }] }),
+  NAV_LINK: "#lessons", NAV_TEXT: "수업 지역 보기", MAIN: homeMain,
+  MOBILE_CONTACT_URL: homeContactUrl,
+  FOOTER_LINK: "#lessons", FOOTER_TEXT: "상담 신청은 버튼을 이용해 주세요.",
+});
+  fs.writeFileSync(path.join(outputPath, "index.html"), homeHtml, "utf8");
+  return data;
+}
+
+module.exports = {
+  brandTemplateValues,
+  escapeHtml,
+  generatePages,
+  loadPages,
+  renderTemplate,
+};

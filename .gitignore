@@ -1,11 +1,20 @@
 # 생성 중 잠깐 사용하는 폴더는 GitHub에 올리지 않습니다.
 .dist-building/
+.cache/
+build-report.json
+build-errors.json
+reports/
+.audit-test-fixture/
+.seo-fix-test-fixture/
+.brand-assets-test-dist/
+.backups/
 
 # dist는 Netlify가 배포할 때 다시 만들 수 있습니다.
 dist/
 
 # Node.js가 내려받는 큰 외부 파일은 올리지 않습니다.
 node_modules/
+.search-console-test-fixture/
 
 # Netlify가 내 컴퓨터에서 만드는 설정과 임시 결과입니다.
 .netlify/

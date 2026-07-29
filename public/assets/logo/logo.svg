@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="176" height="48" viewBox="0 0 176 48" role="img" aria-labelledby="title">
+  <title id="title">Kim's English</title>
+  <rect x="1" y="3" width="42" height="42" rx="13" fill="#2563EB"/>
+  <path d="M14 13v22M14 25l14-12M14 25l15 10" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="54" y="24" fill="#0F172A" font-family="Arial, sans-serif" font-size="17" font-weight="700">Kim's English</text>
+  <text x="54" y="38" fill="#64748B" font-family="Arial, sans-serif" font-size="9.5" letter-spacing="1">PREMIUM EDUCATION</text>
+</svg>

@@ -1,0 +1,31 @@
+{
+  "titleLength": { "min": 4, "max": 65 },
+  "descriptionLength": { "min": 70, "max": 160 },
+  "minimumTextLength": { "regular": 900, "hub": 450, "home": 700 },
+  "minimumInternalLinks": { "regular": 8, "hub": 8, "home": 12 },
+  "maximumClickDepth": 3,
+  "minimumFaqCount": { "regular": 4, "hub": 3, "home": 3 },
+  "keywordRepeatLimit": 12,
+  "regionRepeatLimit": 18,
+  "headingRepeatLimit": 3,
+  "linkRepeatLimit": 5,
+  "relatedRecommendationLimit": 8,
+  "imageMaximumBytes": 2097152,
+  "urlMaximumLength": 160,
+  "duplicateSimilarity": { "high": 0.9, "medium": 0.76, "candidateLimit": 40, "maximumPairs": 5000 },
+  "lowQualityScore": 70,
+  "scoreWeights": {
+    "technicalSeo": 25,
+    "contentQuality": 25,
+    "internalLinks": 20,
+    "schema": 10,
+    "metadata": 10,
+    "accessibility": 10
+  },
+  "strictMode": { "failOnError": true, "maximumErrors": 0, "minimumAverageScore": 70 },
+  "pageRules": {
+    "regular": { "breadcrumb": true, "faq": true, "cta": true, "aiSummary": true, "keyTakeaways": true, "recommendedAudience": true, "relatedSection": true },
+    "hub": { "breadcrumb": true, "faq": true, "cta": true, "aiSummary": false, "keyTakeaways": false, "recommendedAudience": false, "relatedSection": false },
+    "home": { "breadcrumb": false, "faq": true, "cta": true, "aiSummary": false, "keyTakeaways": false, "recommendedAudience": false, "relatedSection": false }
+  }
+}

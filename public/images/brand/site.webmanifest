@@ -1,0 +1,17 @@
+{
+  "name": "Kim's English",
+  "short_name": "Kim's English",
+  "description": "지역과 학습 목적에 맞는 회화 과외 안내",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2457d6",
+  "icons": [
+    {
+      "src": "/images/brand/apple-touch-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

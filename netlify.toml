@@ -1,6 +1,6 @@
 # Netlify가 CSV를 읽어 페이지를 만든 뒤 dist 폴더만 공개합니다.
 [build]
-  command = "node generate-pages.js"
+  command = "npm run build"
   publish = "dist"
 
 # 기본 보안 설정을 모든 공개 페이지에 적용합니다.
