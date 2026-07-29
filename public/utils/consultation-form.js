@@ -122,7 +122,7 @@
         setStatus(
           status,
           "success",
-          "상담 신청이 접수되었습니다. 확인 후 순차적으로 연락드리겠습니다."
+          "상담 신청이 완료되었습니다."
         );
       } catch (error) {
         setStatus(
