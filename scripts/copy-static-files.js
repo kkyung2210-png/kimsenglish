@@ -22,7 +22,7 @@ function makeSitemap({ pages, hubPages = [], baseUrl }) {
     ...pages.map((page) => `  <url><loc>${escapeHtml(`${baseUrl}/${page.slug}/`)}</loc>${page.updated_at ? `<lastmod>${escapeHtml(page.updated_at)}</lastmod>` : ""}</url>`),
     ...hubPages.map((hub) => `  <url><loc>${escapeHtml(hub.canonicalUrl)}</loc></url>`),
   ];
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/sitemap/0.9">\n${entries.join("\n")}\n</urlset>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join("\n")}\n</urlset>\n`;
 }
 
 function writeSitemap({ outputPath, pages, hubPages = [], baseUrl }) {

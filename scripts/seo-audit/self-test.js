@@ -37,7 +37,7 @@ async function runSelfTest() {
     fs.writeFileSync(path.join(fixture, "related-index.json"), JSON.stringify(Object.fromEntries(regular.map((document) => [document.slug, { sameRegion: [], sameProvince: [], sameSubject: [], sameTarget: [], sameIntent: [], popularRelated: [] }]))), "utf8");
     fs.writeFileSync(path.join(fixture, "hub-index.json"), JSON.stringify({ province: [], region: [], subject: [], target: [], intent: [], exam: [] }), "utf8");
     const baseUrl = "https://kimsenglish.co.kr";
-    fs.writeFileSync(path.join(fixture, "sitemap.xml"), `<?xml version="1.0"?><urlset>${documents.map((document) => `<url><loc>${baseUrl}${document.urlPath}</loc></url>`).join("")}</urlset>`, "utf8");
+    fs.writeFileSync(path.join(fixture, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${documents.map((document) => `<url><loc>${baseUrl}${document.urlPath}</loc></url>`).join("")}</urlset>`, "utf8");
     fs.writeFileSync(path.join(fixture, "robots.txt"), `User-agent: *\nAllow: /\nSitemap: ${baseUrl}/sitemap.xml\n`, "utf8");
 
     const result = await runSeoAudit({ root, distPath: fixture, reportsPath: path.join(fixture, "reports"), full: true });

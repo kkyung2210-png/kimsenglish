@@ -131,7 +131,16 @@ function checkSitemapAndRobots(distPath, documents, baseUrl) {
   const sitemapUrls = [];
   if (!fs.existsSync(sitemapPath)) issues.push(issue("ERROR", "technicalSeo", "sitemap-missing", "sitemap.xml이 없습니다."));
   else {
-    const xml = fs.readFileSync(sitemapPath, "utf8");
+    const sitemapBytes = fs.readFileSync(sitemapPath);
+    const hasBom = sitemapBytes.length >= 3 && sitemapBytes[0] === 0xef && sitemapBytes[1] === 0xbb && sitemapBytes[2] === 0xbf;
+    const xml = sitemapBytes.toString("utf8");
+    if (hasBom) issues.push(issue("ERROR", "technicalSeo", "sitemap-utf8-bom", "sitemap.xml은 UTF-8 BOM 없이 저장해야 합니다."));
+    if (!/^<\?xml version="1\.0" encoding="UTF-8"\?>\r?\n<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/.test(xml)) {
+      issues.push(issue("ERROR", "technicalSeo", "sitemap-namespace-invalid", "sitemap.xml의 urlset namespace가 Google Sitemap 규격과 다릅니다."));
+    }
+    if (/\sxmlns:(?:xhtml|image|news|video)=/i.test(xml)) {
+      issues.push(issue("ERROR", "technicalSeo", "sitemap-namespace-unused", "사용하지 않는 sitemap namespace가 포함되어 있습니다."));
+    }
     if (!/<urlset\b[^>]*>[\s\S]*<\/urlset>/i.test(xml)) issues.push(issue("ERROR", "technicalSeo", "sitemap-xml-invalid", "sitemap.xml 기본 XML 구조가 잘못되었습니다."));
     sitemapUrls.push(...[...xml.matchAll(/<loc>([\s\S]*?)<\/loc>/gi)].map((match) => decodeHtml(match[1].trim())));
     const counts = new Map();

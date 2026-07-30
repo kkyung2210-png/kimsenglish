@@ -80,7 +80,8 @@ function makeFingerprints(root) {
       "config/brand-assets.js", "config/content", "public/assets",
     ]),
     staticFiles: fingerprint(root, [
-      "assets/style.css", "public/utils", "public/images", ...googleVerificationTargets(root),
+      "assets/style.css", "scripts/copy-static-files.js", "public/utils", "public/images",
+      ...googleVerificationTargets(root),
     ]),
   };
 }
