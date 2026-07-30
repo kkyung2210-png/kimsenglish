@@ -190,7 +190,7 @@ p { margin-top: 0; }
 .home-hero-copy .lead { max-width: 590px; margin-bottom: 22px; color: #506079; font-size: clamp(1.02rem, 2.5vw, 1.18rem); line-height: 1.72; text-wrap: pretty; }
 .lead { max-width: 720px; margin: 0 0 26px; color: #526176; font-size: 1.02rem; }
 .hero-actions { display: flex; flex-direction: column; gap: 10px; }
-.hero-trust { display: flex; flex-wrap: wrap; gap: 10px 18px; margin: 0 0 20px; padding: 0; color: #46566b; font-size: .84rem; font-weight: 800; list-style: none; }
+.hero-trust { max-width: 590px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 18px; margin: 0 0 16px; padding: 0; color: #46566b; font-size: .84rem; font-weight: 800; list-style: none; }
 .hero-trust li { display: flex; align-items: center; gap: 9px; }
 .hero-trust li::before { width: 22px; height: 22px; display: grid; flex: 0 0 22px; place-items: center; color: var(--success); background: #eaf7f1; border-radius: 50%; content: "✓"; font-size: .74rem; }
 .badge-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
@@ -202,7 +202,6 @@ p { margin-top: 0; }
 .home-hero .hero-actions .button { min-height: 58px; padding-inline: 30px; font-size: 1rem; }
 .home-hero .hero-actions .button-primary { box-shadow: 0 16px 38px rgba(36, 87, 214, .25); }
 .home-hero .hero-actions .button-secondary { background: rgba(255, 255, 255, .68); backdrop-filter: blur(10px); }
-.home-hero .hero-points { margin-top: 22px; color: #68768b; font-size: .83rem; }
 .hero-search { position: relative; z-index: 20; width: 100%; margin: 0 0 18px; }
 .search-form { position: relative; }
 .search-control { min-height: 60px; display: flex; align-items: center; gap: 8px; padding: 6px; background: #fff; border: 1px solid #b9c8e6; border-radius: var(--radius-large); box-shadow: 0 14px 36px rgba(24, 45, 78, .14); transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease; }
@@ -726,8 +725,7 @@ p { margin-top: 0; }
   .home-hero .hero-actions { gap: 8px; }
   .home-hero .hero-actions .button { min-height: 50px; padding-inline: 20px; border-radius: 15px; font-size: 1rem; }
   .home-hero .hero-actions .button-secondary { display: none; }
-  .home-hero .hero-points { display: grid; gap: 6px; margin-top: 16px; }
-  .home-hero .hero-points li { display: flex; align-items: center; }
+  .home-hero .hero-trust { grid-template-columns: 1fr; gap: 8px; margin-bottom: 14px; }
   .home-hero .image-box-hero { width: 100%; max-height: 260px; overflow: hidden; aspect-ratio: 16 / 9; }
   .home-hero .image-box-hero img { object-fit: contain; object-position: right center; }
 }
