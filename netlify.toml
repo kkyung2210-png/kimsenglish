@@ -2,6 +2,8 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  # 생성 스크립트 변경도 반드시 새 배포에 반영합니다.
+  ignore = "exit 1"
 
 # 기본 보안 설정을 모든 공개 페이지에 적용합니다.
 [[headers]]
