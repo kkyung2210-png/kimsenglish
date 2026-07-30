@@ -29,13 +29,24 @@ function writeSitemap({ outputPath, pages, hubPages = [], baseUrl }) {
   return writeIfChanged(path.join(outputPath, "sitemap.xml"), makeSitemap({ pages, hubPages, baseUrl }));
 }
 
+/** Google Search Console 소유권 확인용 HTML만 public 루트에서 dist 루트로 복사합니다. */
+function copyGoogleVerificationFiles(publicRoot, outputPath) {
+  if (!fs.existsSync(publicRoot)) return;
+  const files = fs.readdirSync(publicRoot, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && /^google[a-z0-9_-]+\.html$/i.test(entry.name));
+  for (const file of files) {
+    copyIfChanged(path.join(publicRoot, file.name), path.join(outputPath, file.name));
+  }
+}
+
 /** CSS, 검색 스크립트, 기존 이미지와 SEO 정적 파일을 dist에 준비합니다. */
 function copyStaticFiles({ root, outputPath, pages, hubPages = [], baseUrl }) {
+  const publicRoot = path.join(root, "public");
   const styleFile = path.join(root, "assets", "style.css");
-  const searchScript = path.join(root, "public", "utils", "search.js");
-  const consultationScript = path.join(root, "public", "utils", "consultation-form.js");
-  const reviewsScript = path.join(root, "public", "utils", "reviews-carousel.js");
-  const images = path.join(root, "public", "images");
+  const searchScript = path.join(publicRoot, "utils", "search.js");
+  const consultationScript = path.join(publicRoot, "utils", "consultation-form.js");
+  const reviewsScript = path.join(publicRoot, "utils", "reviews-carousel.js");
+  const images = path.join(publicRoot, "images");
 
   for (const requiredFile of [styleFile, searchScript, consultationScript, reviewsScript]) {
     if (!fs.existsSync(requiredFile)) throw new Error(`필요한 정적 파일을 찾을 수 없습니다: ${requiredFile}`);
@@ -53,6 +64,7 @@ function copyStaticFiles({ root, outputPath, pages, hubPages = [], baseUrl }) {
       filter: (file) => path.basename(file) !== ".gitkeep",
     });
   }
+  copyGoogleVerificationFiles(publicRoot, outputPath);
 
   writeSitemap({ outputPath, pages, hubPages, baseUrl });
   writeIfChanged(path.join(outputPath, "robots.txt"), `User-agent: *\nAllow: /\n\nSitemap: ${baseUrl}/sitemap.xml\n`);

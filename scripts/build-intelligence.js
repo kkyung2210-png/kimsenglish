@@ -63,6 +63,15 @@ function loadManifest(root) {
   return manifest;
 }
 
+/** public 루트의 Google 인증 HTML을 정적 파일 변경 검사에 포함합니다. */
+function googleVerificationTargets(root) {
+  const publicRoot = path.join(root, "public");
+  if (!fs.existsSync(publicRoot)) return [];
+  return fs.readdirSync(publicRoot, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && /^google[a-z0-9_-]+\.html$/i.test(entry.name))
+    .map((entry) => path.join("public", entry.name));
+}
+
 function makeFingerprints(root) {
   return {
     pageTemplate: fingerprint(root, [
@@ -70,7 +79,9 @@ function makeFingerprints(root) {
       "scripts/content-intelligence.js", "scripts/generate-hub-pages.js", "scripts/utils/assets",
       "config/brand-assets.js", "config/content", "public/assets",
     ]),
-    staticFiles: fingerprint(root, ["assets/style.css", "public/utils", "public/images"]),
+    staticFiles: fingerprint(root, [
+      "assets/style.css", "public/utils", "public/images", ...googleVerificationTargets(root),
+    ]),
   };
 }
 
