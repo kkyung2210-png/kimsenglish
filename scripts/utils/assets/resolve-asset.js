@@ -90,7 +90,10 @@ function resolveTargetAsset(target, root = path.resolve(__dirname, "../../..")) 
 function resolveHeroAsset(root = path.resolve(__dirname, "../../..")) {
   const desktop = resolveEntry(root, config.hero.desktop, null, { key: "hero-desktop" });
   const mobile = resolveEntry(root, config.hero.mobile, null, { key: "hero-mobile" });
-  if (!mobile.src && desktop.src) return { desktop, mobile: { ...desktop, key: "hero-mobile" } };
+  // 모바일 전용 파일이 아직 없으면 Placeholder 대신 실제 데스크톱 이미지를 재사용합니다.
+  if (mobile.source !== "primary" && desktop.source === "primary") {
+    return { desktop, mobile: { ...desktop, key: "hero-mobile", source: "desktop-fallback" } };
+  }
   return { desktop, mobile };
 }
 

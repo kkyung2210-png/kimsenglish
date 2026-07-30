@@ -40,8 +40,9 @@ function runTest() {
     assert.match(assets.desktop.src, /hero-placeholder\.svg$/);
   }
   if (!mobileExists) {
-    assert.strictEqual(assets.mobile.source, 'placeholder');
-    assert.match(assets.mobile.src, /hero-placeholder\.svg$/);
+    assert.strictEqual(assets.mobile.source, 'desktop-fallback');
+    assert.strictEqual(assets.mobile.src, assets.desktop.src);
+    assert.match(html, /srcset="\/assets\/hero\/hero-desktop\.webp"/);
   }
 
   // 실제 WebP 파일을 임시 폴더에 넣었을 때 두 경로가 자동 선택되는지도 확인합니다.
@@ -74,7 +75,7 @@ function runTest() {
 
   console.log('Hero 이미지 시스템 테스트 통과');
   console.log('- Desktop 이미지:', desktopExists ? 'WebP 사용' : 'fallback illustration 사용');
-  console.log('- Mobile 이미지:', mobileExists ? 'WebP 사용' : 'fallback illustration 사용');
+  console.log('- Mobile 이미지:', mobileExists ? 'WebP 사용' : 'Desktop WebP 자동 대체');
   console.log('- picture, eager, high priority, async decoding, 크기 속성 확인');
 }
 

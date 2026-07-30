@@ -713,6 +713,22 @@ p { margin-top: 0; }
   .wizard-mobile-nav { display: none; }
 }
 
+@media (max-width: 768px) {
+  .home-hero { padding: 52px 0 28px; }
+  .home-hero-layout { gap: 22px; }
+  .home-hero-copy .eyebrow { margin-bottom: 14px; }
+  .home-hero-copy h1 { margin-bottom: 18px; }
+  .home-hero-copy .lead { margin-bottom: 28px; line-height: 1.62; }
+  .home-hero .hero-search { margin-bottom: 22px; }
+  .home-hero .hero-actions { gap: 8px; }
+  .home-hero .hero-actions .button { min-height: 50px; padding-inline: 20px; border-radius: 15px; font-size: 1rem; }
+  .home-hero .hero-actions .button-secondary { display: none; }
+  .home-hero .hero-points { display: grid; gap: 6px; margin-top: 16px; }
+  .home-hero .hero-points li { display: flex; align-items: center; }
+  .home-hero .image-box-hero { width: 100%; max-height: 260px; overflow: hidden; aspect-ratio: 16 / 9; }
+  .home-hero .image-box-hero img { object-fit: contain; object-position: right center; }
+}
+
 @media (min-width: 1024px) {
   .reviews-section { --review-visible: 3; }
   :root { --section-space: 120px; }
