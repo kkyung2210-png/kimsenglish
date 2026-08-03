@@ -39,22 +39,20 @@ function copyGoogleVerificationFiles(publicRoot, outputPath) {
   }
 }
 
-/** CSS, 검색 스크립트, 기존 이미지와 SEO 정적 파일을 dist에 준비합니다. */
+/** CSS, 상담·후기 스크립트, 기존 이미지와 SEO 정적 파일을 dist에 준비합니다. */
 function copyStaticFiles({ root, outputPath, pages, hubPages = [], baseUrl }) {
   const publicRoot = path.join(root, "public");
   const styleFile = path.join(root, "assets", "style.css");
-  const searchScript = path.join(publicRoot, "utils", "search.js");
   const consultationScript = path.join(publicRoot, "utils", "consultation-form.js");
   const reviewsScript = path.join(publicRoot, "utils", "reviews-carousel.js");
   const images = path.join(publicRoot, "images");
 
-  for (const requiredFile of [styleFile, searchScript, consultationScript, reviewsScript]) {
+  for (const requiredFile of [styleFile, consultationScript, reviewsScript]) {
     if (!fs.existsSync(requiredFile)) throw new Error(`필요한 정적 파일을 찾을 수 없습니다: ${requiredFile}`);
   }
 
   copyIfChanged(styleFile, path.join(outputPath, "style.css"));
   fs.mkdirSync(path.join(outputPath, "utils"), { recursive: true });
-  copyIfChanged(searchScript, path.join(outputPath, "utils", "search.js"));
   copyIfChanged(consultationScript, path.join(outputPath, "utils", "consultation-form.js"));
   copyIfChanged(reviewsScript, path.join(outputPath, "utils", "reviews-carousel.js"));
 

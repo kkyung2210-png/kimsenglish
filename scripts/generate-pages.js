@@ -398,14 +398,6 @@ function processHtml(type) {
     .join("");
 }
 
-function linkChipsHtml(slugs, pageLookup, labelOf = (page) => page.title) {
-  return (slugs || []).map((slug) => {
-    const linked = pageLookup.get(slug);
-    if (!linked) return "";
-    return `<li><a href="/${linked.slug}/">${escapeHtml(labelOf(linked))}</a></li>`;
-  }).join("");
-}
-
 function aiSummaryHtml(page, context) {
   const audience = page.target ? `${page.target} 학습자` : `${context.service} 수업을 찾는 학습자`;
   const points = [
@@ -435,47 +427,6 @@ function keyTakeawaysHtml(page, context) {
     `목표는 ${shortPhrase(context.result, 58)} 변화입니다.`,
   ];
   return `<section class="section key-takeaways-section" aria-labelledby="key-takeaways-title"><div class="container"><div class="section-heading"><p class="section-kicker">Key Takeaways</p><h2 id="key-takeaways-title">${escapeHtml(page.region)} ${escapeHtml(context.service)} 핵심 요약</h2><p class="section-intro">이 페이지에서 확인할 내용을 다섯 가지로 정리했습니다.</p></div><ul class="key-takeaways">${takeaways.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div></section>`;
-}
-
-function relatedNavigationHtml(page, related, pageLookup) {
-  const groups = [
-    [`${page.region}의 다른 수업`, related.sameRegion, (linked) => linked.title],
-    [`${page.subject} 수업을 제공하는 다른 지역`, related.sameSubject, (linked) => linked.title],
-    [`${page.subject} 대상별 수업`, related.sameTarget, (linked) => linked.title],
-    [`${page.province}의 다른 인기 지역`, related.sameProvince, (linked) => linked.region],
-    [`${page.subject} 관련 학습 목적`, related.sameIntent, (linked) => linked.title],
-  ].filter(([, slugs]) => slugs && slugs.length);
-
-  const content = groups.map(([title, slugs, labelOf]) => `<section class="internal-link-group"><h3>${escapeHtml(title)}</h3><ul class="internal-link-chips">${linkChipsHtml(slugs, pageLookup, labelOf)}</ul></section>`).join("");
-  return `<section class="section internal-links-section" id="related"><div class="container"><div class="section-heading"><p class="section-kicker">자동 내부링크</p><h2>${escapeHtml(page.region)} ${escapeHtml(page.subject)}와 함께 살펴볼 수업</h2><p class="section-intro">지역, 과목, 대상과 학습 목적이 가까운 페이지를 관련도 순서로 연결했습니다.</p></div><div class="internal-link-groups">${content}</div></div></section>`;
-}
-
-function hubGroupHtml(icon, title, hubs, labelOf) {
-  if (!hubs.length) return "";
-  const links = hubs.slice(0, 8).map((hub) => `<li><a href="${escapeHtml(hub.url || `/${hub.slug}/`)}">${escapeHtml(labelOf(hub))}</a></li>`).join("");
-  return `<section class="hub-group"><h3><span aria-hidden="true">${icon}</span> ${escapeHtml(title)}</h3><ul class="hub-link-chips">${links}</ul></section>`;
-}
-
-function discoveryNavigationHtml(page, related, hubIndex, pageLookup) {
-  const currentProvinceHub = hubIndex.province.find((hub) => hub.value === page.province);
-  const currentRegionHub = hubIndex.region.find((hub) => hub.province === page.province && hub.region === page.region);
-  const sameProvinceRegions = hubIndex.region.filter((hub) => hub.province === page.province && hub.region !== page.region);
-  const localHubs = [
-    currentProvinceHub ? { ...currentProvinceHub, region: currentProvinceHub.value } : null,
-    currentRegionHub,
-    ...sameProvinceRegions,
-  ].filter(Boolean);
-  const regionHubs = localHubs.length
-    ? [...new Map(localHubs.map((hub) => [hub.url, hub])).values()]
-    : hubIndex.province.map((hub) => ({ ...hub, region: hub.value }));
-  const hubGroups = [
-    hubGroupHtml("📍", `${page.subject} 지역별 보기`, regionHubs, (hub) => hub.region),
-    hubGroupHtml("📚", `${page.region} 과목별 보기`, hubIndex.subject, (hub) => hub.value),
-    hubGroupHtml("👨", `${page.subject} 대상별 보기`, hubIndex.target, (hub) => hub.value),
-    hubGroupHtml("🎯", `${page.region} 시험별 보기`, hubIndex.exam, (hub) => hub.value),
-  ].join("");
-  const popular = linkChipsHtml(related.popularRelated, pageLookup);
-  return `<section class="section section-soft recommendation-navigation" aria-labelledby="recommendation-navigation-title"><div class="container"><div class="section-heading"><p class="section-kicker">추천 탐색</p><h2 id="recommendation-navigation-title">${escapeHtml(page.region)} ${escapeHtml(page.subject)} 다음 수업 탐색</h2><p class="section-intro">지역과 과목 및 대상 Hub를 통해 필요한 수업을 계속 탐색할 수 있습니다.</p></div><div class="hub-navigation-grid">${hubGroups}</div><div class="popular-related"><h3>다음으로 많이 찾는 페이지</h3><ul class="internal-link-chips">${popular}</ul></div></div></section>`;
 }
 
 function pickRepresentative(pages, predicate) {
@@ -557,10 +508,8 @@ function loadPages() {
 }
 
 /** 지역별 페이지와 메인페이지만 생성합니다. */
-function generatePages({ outputPath, data = loadPages(), relatedIndex, hubIndex, pageSlugs = null, generateHome = true }) {
+function generatePages({ outputPath, data = loadPages(), pageSlugs = null, generateHome = true }) {
   const { pages, template, baseUrl } = data;
-  if (!relatedIndex || !hubIndex) throw new Error("related-index와 hub-index 데이터가 필요합니다.");
-  const pageLookup = new Map(pages.map((page) => [page.slug, page]));
   fs.mkdirSync(outputPath, { recursive: true });
 
 const selectedPages = pageSlugs ? pages.filter((page) => pageSlugs.has(page.slug)) : pages;
@@ -568,10 +517,6 @@ for (const [index, page] of selectedPages.entries()) {
   const context = page.content;
   const faqs = makeFaqs(page, context);
   const faqHtml = faqs.map((faq, faqIndex) => `<details class="faq-item"${faqIndex === 0 ? " open" : ""}><summary><h3>${escapeHtml(faq.question)}</h3></summary><div class="faq-answer"><p>${escapeHtml(faq.answer)}</p></div></details>`).join("");
-  const related = relatedIndex[page.slug];
-  if (!related) throw new Error(`${page.slug}: related-index 결과가 없습니다.`);
-  const relatedHtml = relatedNavigationHtml(page, related, pageLookup);
-  const discoveryHtml = discoveryNavigationHtml(page, related, hubIndex, pageLookup);
   const aiSummary = aiSummaryHtml(page, context);
   const keyTakeaways = keyTakeawaysHtml(page, context);
   const lessonExamples = examplesHtml(page, context);
@@ -597,11 +542,10 @@ for (const [index, page] of selectedPages.entries()) {
   <section class="section" id="management"><div class="container"><div class="section-heading"><p class="section-kicker">${escapeHtml(categoryName)} 학습 관리</p><h2>${escapeHtml(page.region)} ${escapeHtml(context.service)} 수업에서 무엇을 관리하나요?</h2><p class="section-intro">${escapeHtml(page.intelligence.benefit)}</p></div><div class="management-grid"><article class="panel"><div class="panel-icon">01</div><h3>${escapeHtml(context.service)} 학습 전 핵심 고민</h3><p>${escapeHtml(context.concern)}</p></article><article class="panel"><div class="panel-icon">02</div><h3>${escapeHtml(context.service)} 수업의 학습 초점</h3><p>${escapeHtml(context.focus)}</p></article><article class="panel"><div class="panel-icon">03</div><h3>${escapeHtml(context.service)} 수업과 복습 방법</h3><p>${escapeHtml(context.method)} ${escapeHtml(context.result)}</p></article></div></div></section>
   ${lessonExamples}
   <section class="section section-soft" id="fit"><div class="container"><div class="section-heading"><p class="section-kicker">추천 대상</p><h2>${escapeHtml(page.region)} ${escapeHtml(context.service)}, 이런 분께 추천합니다</h2></div><ul class="fit-list"><li>${escapeHtml(context.intent)}</li><li>${escapeHtml(context.concern)}</li><li>${escapeHtml(context.focus)} 내용이 필요한 분</li><li>${escapeHtml(context.result)} 변화를 원하는 분</li></ul></div></section>
-  ${relatedHtml}
   <section class="section section-soft" id="faq"><div class="container"><div class="section-heading"><p class="section-kicker">자주 묻는 질문</p><h2>${escapeHtml(page.region)} ${escapeHtml(context.service)} 수업 전 자주 묻는 질문</h2></div><div class="faq-list">${faqHtml}</div>${page.updated_at ? `<p class="updated">마지막 내용 확인: ${escapeHtml(page.updated_at)}</p>` : ""}</div></section>
   <section class="section" id="consultation"><div class="container"><div class="cta"><h2>${escapeHtml(firstValue(page, "cta_title") || page.intelligence.cta.title)}</h2><p>${escapeHtml(firstValue(page, "cta_text") || page.intelligence.cta.text)}</p><a class="button" href="${contactUrl}">${escapeHtml(page.intelligence.cta.label)}</a></div></div></section>
   ${keyTakeaways}
-  ${discoveryHtml}`;
+  `;
   const html = renderTemplate(template, {
     ...brandTemplateValues(page, baseUrl),
     LANG: escapeHtml(page.language), TITLE: escapeHtml(page.title), DESCRIPTION: escapeHtml(page.description),
