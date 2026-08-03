@@ -29,11 +29,11 @@ function writeSitemap({ outputPath, pages, hubPages = [], baseUrl }) {
   return writeIfChanged(path.join(outputPath, "sitemap.xml"), makeSitemap({ pages, hubPages, baseUrl }));
 }
 
-/** Google Search Console 소유권 확인용 HTML만 public 루트에서 dist 루트로 복사합니다. */
-function copyGoogleVerificationFiles(publicRoot, outputPath) {
+/** Google·네이버 검색 서비스 소유권 확인용 HTML을 dist 루트로 복사합니다. */
+function copySearchVerificationFiles(publicRoot, outputPath) {
   if (!fs.existsSync(publicRoot)) return;
   const files = fs.readdirSync(publicRoot, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && /^google[a-z0-9_-]+\.html$/i.test(entry.name));
+    .filter((entry) => entry.isFile() && /^(?:google|naver)[a-z0-9_-]+\.html$/i.test(entry.name));
   for (const file of files) {
     copyIfChanged(path.join(publicRoot, file.name), path.join(outputPath, file.name));
   }
@@ -62,7 +62,7 @@ function copyStaticFiles({ root, outputPath, pages, hubPages = [], baseUrl }) {
       filter: (file) => path.basename(file) !== ".gitkeep",
     });
   }
-  copyGoogleVerificationFiles(publicRoot, outputPath);
+  copySearchVerificationFiles(publicRoot, outputPath);
 
   writeSitemap({ outputPath, pages, hubPages, baseUrl });
   writeIfChanged(path.join(outputPath, "robots.txt"), `User-agent: *\nAllow: /\n\nSitemap: ${baseUrl}/sitemap.xml\n`);
