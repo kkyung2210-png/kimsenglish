@@ -68,10 +68,6 @@
     if (message) status.focus({ preventScroll: true });
   }
 
-  function encodeForm(form) {
-    return new URLSearchParams(new FormData(form)).toString();
-  }
-
   function initForm(form, runtime) {
     if (form.dataset.consultationReady === "true") return;
     form.dataset.consultationReady = "true";
@@ -104,31 +100,37 @@
 
       isSubmitting = true;
       submitButton.disabled = true;
-      submitButton.textContent = "신청 중...";
-      form.elements.sourcePage.value = runtime.location.pathname || "/";
+      submitButton.textContent = "전송 중...";
+      form.elements.sourcePage.value = runtime.location.href;
       form.elements.submittedAt.value = new Date().toISOString();
 
       try {
-        const response = await runtime.fetch("/", {
+        const values = readValues(form);
+        const response = await runtime.fetch("/.netlify/functions/consultation-email", {
           method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: encodeForm(form),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: clean(values.phone), lesson: clean(values.lesson), message: clean(values.message),
+            privacyConsent: values.privacyConsent ? "yes" : "", sourcePage: runtime.location.href,
+            submittedAt: form.elements.submittedAt.value,
+            botField: form.elements["bot-field"] ? form.elements["bot-field"].value : "",
+          }),
         });
-        if (!response.ok) throw new Error("Form submission failed");
+        if (!response.ok) throw new Error("Email submission failed");
         form.reset();
         showErrors(form, {});
-        form.elements.sourcePage.value = runtime.location.pathname || "/";
+        form.elements.sourcePage.value = runtime.location.href;
         form.elements.submittedAt.value = "";
         setStatus(
           status,
           "success",
-          "상담 신청이 완료되었습니다."
+          "상담 신청이 완료되었습니다.\n빠른 시간 내 연락드리겠습니다."
         );
-      } catch (error) {
+      } catch {
         setStatus(
           status,
           "error",
-          "상담 신청 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요."
+          "상담 신청에 실패했습니다.\n잠시 후 다시 시도해주세요."
         );
       } finally {
         isSubmitting = false;

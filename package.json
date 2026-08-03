@@ -21,7 +21,12 @@
     "fix:test": "node scripts/seo-fix/self-test.js",
     "test:assets": "node scripts/test-brand-assets.js",
     "test:hero": "node scripts/test-hero-assets.js",
+    "test:consultation-email": "node scripts/test-consultation-email.js",
+    "lint": "eslint public/utils/consultation-form.js netlify/functions/consultation-email.js scripts/test-consultation-email.js",
     "preview": "node preview-server.js",
     "validate:content": "node scripts/validate-content-intelligence.js"
+  },
+  "devDependencies": {
+    "eslint": "^9.32.0"
   }
 }
