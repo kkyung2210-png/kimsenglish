@@ -32,7 +32,7 @@ const processLesson = resolveProcessAsset("lesson", root);
 const processFeedback = resolveProcessAsset("feedback", root);
 const levelTestCtaImage = resolveCtaAsset("levelTest", root);
 
-// 회화·시험·비즈니스·여행마다 8개씩 준비한 description 패턴입니다.
+// 본문 구성 분류를 검증할 때 사용합니다. Hero 문구는 아래 전용 패턴으로 생성합니다.
 const DESCRIPTION_PATTERNS = {
   conversation: [
     (c) => `${c.region} ${c.audience} 맞춤 ${c.service} 수업입니다. ${c.intentSentence} ${c.concernSentence} ${c.toneLead} 수업에서는 ${c.focus} 내용을 중심으로 연습합니다.`,
@@ -73,6 +73,50 @@ const DESCRIPTION_PATTERNS = {
     (c) => `${c.region}에서 ${c.service} 준비가 필요한 ${c.audience}에게 학습 방향을 안내합니다. ${c.concernSentence} ${c.intentSentence} ${c.focus} 내용을 여행 흐름에 맞춰 익힙니다.`,
     (c) => `${c.region} ${c.audience} 대상 ${c.service} 준비 안내입니다. ${c.intentSentence} ${c.methodSentence} 여행 학습 초점은 ${c.focus}입니다.`,
     (c) => `${c.region}에서 ${c.service} 준비를 시작하는 ${c.audience}를 위한 수업입니다. ${c.concernSentence} ${c.resultSentence} ${c.toneLead} 진행합니다.`,
+  ],
+};
+
+// 실제 학원 홈페이지에서 자연스럽게 쓰는 표현을 분류별로 섞어 페이지 간 중복을 줄입니다.
+const HERO_SECOND_SENTENCES = {
+  conversation: [
+    "기초 표현부터 실전 대화까지 단계별로 익히며, 말하기가 자연스러워지도록 꼼꼼하게 지도합니다.",
+    "현재 실력에 맞춘 1:1 맞춤 수업으로 부족한 부분을 보완하고, 자주 쓰는 표현을 반복해서 연습합니다.",
+    "학습 목표에 맞춰 필요한 표현부터 배우고, 다양한 상황에서 직접 말해 보는 연습을 진행합니다.",
+    "처음 배우는 분도 기초부터 차근차근 시작하며, 듣기와 말하기를 균형 있게 익힐 수 있습니다.",
+    "수준과 학습 속도를 고려한 개별 수업으로, 배운 문장을 실제 대화에 활용하도록 도와드립니다.",
+    "간단한 문장 만들기부터 상황별 회화까지 순서대로 배우며, 부족한 부분은 반복해서 복습합니다.",
+    "현재 수준을 먼저 확인한 뒤 필요한 어휘와 문장을 익히고, 충분한 말하기 연습을 이어갑니다.",
+    "원하는 학습 방향에 맞춰 수업 내용을 구성하고, 일상에서 바로 쓸 수 있는 표현을 중심으로 배웁니다.",
+  ],
+  exam: [
+    "현재 점수와 목표를 확인한 뒤 영역별 학습 계획을 세우고, 취약 유형을 단계적으로 보완합니다.",
+    "목표 점수에 맞춘 1:1 맞춤 수업으로 핵심 개념부터 문제 풀이와 오답 정리까지 꼼꼼히 진행합니다.",
+    "기초 개념을 확실히 정리한 뒤 출제 유형별 문제를 풀며, 실전 감각과 시간 관리 능력을 높입니다.",
+    "개인별 약점을 정확히 파악해 필요한 영역에 집중하고, 반복되는 실수를 줄이도록 지도합니다.",
+    "시험 일정과 학습 목표에 맞춰 진도를 구성하며, 개념 학습과 실전 문제 풀이를 균형 있게 진행합니다.",
+    "현재 실력에 알맞은 학습 순서를 정하고, 자주 틀리는 문제를 중심으로 오답 관리까지 함께합니다.",
+    "영역별 기초부터 실전 대비까지 단계별로 배우며, 목표 점수에 필요한 풀이 방법을 익힙니다.",
+    "학습 기간과 목표 등급을 고려한 개별 수업으로, 필요한 유형을 집중적으로 연습할 수 있습니다.",
+  ],
+  business: [
+    "현재 업무와 필요한 상황을 확인한 뒤, 회의와 이메일에 바로 활용할 표현을 중심으로 연습합니다.",
+    "직무와 학습 목표에 맞춘 1:1 맞춤 수업으로 실무에 필요한 말하기와 문장 작성을 익힙니다.",
+    "기본 비즈니스 표현부터 실제 업무 상황별 대화까지 단계적으로 배우며 활용도를 높입니다.",
+    "자주 사용하는 업무 표현을 정리하고, 역할 연습과 문장 교정을 통해 정확한 전달력을 기릅니다.",
+    "현재 실력과 업무 환경에 맞춰 수업을 구성하며, 필요한 표현을 반복해 자연스럽게 익힙니다.",
+    "이메일과 전화, 회의 등 필요한 분야를 우선해 배우고 실제 상황처럼 충분히 연습합니다.",
+    "개인별 업무 목적에 맞는 어휘와 문장을 익히며, 자연스럽고 정확한 의사소통을 준비합니다.",
+    "실무에서 자주 마주치는 상황을 바탕으로 수업하며, 부족한 표현과 문장을 꼼꼼히 교정합니다.",
+  ],
+  travel: [
+    "공항과 숙소, 식당 등 여행에서 자주 만나는 상황을 중심으로 꼭 필요한 표현부터 배웁니다.",
+    "현재 실력에 맞춘 1:1 맞춤 수업으로 기본 문장부터 상황별 대화까지 차근차근 연습합니다.",
+    "여행 일정과 학습 목표에 맞춰 필요한 표현을 골라 배우고, 실제 상황처럼 대화를 반복합니다.",
+    "처음 배우는 분도 인사와 질문 같은 기초 표현부터 시작해 여행 대화를 자연스럽게 익힐 수 있습니다.",
+    "출국 전에 꼭 필요한 문장을 정리하고, 현지에서 바로 말할 수 있도록 상황별로 연습합니다.",
+    "여행 중 자주 쓰는 질문과 답변을 단계별로 배우며, 낯선 상황에도 대응할 수 있도록 준비합니다.",
+    "개인별 여행 목적에 맞춰 수업 내용을 구성하고, 듣기와 말하기를 함께 충분히 연습합니다.",
+    "기초 회화부터 현지에서 필요한 실용 표현까지 배우며, 자신 있게 말하는 연습을 이어갑니다.",
   ],
 };
 
@@ -361,15 +405,13 @@ function makeContentContext(page) {
 
 function makeDescription(page, context) {
   const templateType = normalizeContentTemplate(page);
-  const patterns = DESCRIPTION_PATTERNS[templateType];
-  const patternIndex = stableHash(page.slug) % patterns.length;
-  let description = patterns[patternIndex](context).replace(/\s+/g, " ").trim();
-  // 누구를 위한 수업인지 답한 첫 문장 바로 뒤에 톤을 자연스럽게 표시합니다.
-  const firstSentenceEnd = description.indexOf(".");
-  if (firstSentenceEnd !== -1) {
-    description = `${description.slice(0, firstSentenceEnd + 1)} ${toneAdjective(page.tone)} 방식으로 진행합니다.${description.slice(firstSentenceEnd + 1)}`;
-  }
-  return fitMetaDescription(description, context);
+  const patterns = HERO_SECOND_SENTENCES[templateType];
+  const hash = stableHash(page.slug);
+  const lessonName = [page.target, context.service].filter(Boolean).join(" ");
+  const opening = hash % 2 === 0
+    ? `${context.city}에서 ${lessonName} 수업을 찾고 계신다면, 현재 실력과 학습 목표에 맞는 수업으로 시작해 보세요.`
+    : `${context.city}에서 ${lessonName} 수업을 배우고 싶다면, 개인별 수준과 필요한 학습 방향을 먼저 확인해 보세요.`;
+  return `${opening} ${patterns[hash % patterns.length]}`;
 }
 
 function makeQuestionHeading(page, context) {
@@ -474,12 +516,11 @@ function loadPages() {
       const content = makeContentContext(page);
       const contentTemplate = normalizeContentTemplate(page);
       const generatedDescription = makeDescription(page, content);
-      const useFinalDescription = page.template && page.providedDescription.length >= 80 && page.providedDescription.length <= 150;
       const preparedPage = {
         ...page,
         content,
         contentTemplate,
-        description: useFinalDescription ? page.providedDescription : generatedDescription,
+        description: generatedDescription,
         h1: page.keyword || page.title,
       };
       return { ...preparedPage, intelligence: createPageContent(preparedPage, content) };

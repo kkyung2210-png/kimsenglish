@@ -24,7 +24,8 @@
     "test:consultation-email": "node scripts/test-consultation-email.js",
     "lint": "eslint public/utils/consultation-form.js netlify/functions/consultation-email.js scripts/test-consultation-email.js",
     "preview": "node preview-server.js",
-    "validate:content": "node scripts/validate-content-intelligence.js"
+    "validate:content": "node scripts/validate-content-intelligence.js",
+    "update:hero-copy": "node scripts/update-hero-descriptions.js"
   },
   "devDependencies": {
     "eslint": "^9.32.0"
