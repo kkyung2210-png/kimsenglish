@@ -96,7 +96,7 @@ function checkContent(document, searchItem, config) {
   if (searchItem?.region && countOccurrences(document.text, searchItem.region) > config.regionRepeatLimit) problems.push(issue("WARNING", "contentQuality", "region-overused", "본문에서 지역명이 설정 기준보다 많이 반복됩니다."));
   if (rules.cta && !document.hasCta) problems.push(issue("ERROR", "contentQuality", "cta-missing", "CTA 영역이 없습니다."));
   if (rules.faq && document.faqQuestions.length < minimumFaq) problems.push(issue("WARNING", "contentQuality", "faq-too-few", `FAQ가 ${minimumFaq}개보다 적습니다.`, { count: document.faqQuestions.length }));
-  if (rules.aiSummary && !document.hasAiSummary) problems.push(issue("WARNING", "contentQuality", "ai-summary-missing", "AI Summary 영역이 없습니다."));
+  if (rules.lessonSummary && !document.hasLessonSummary) problems.push(issue("WARNING", "contentQuality", "lesson-summary-missing", "수업 상담 요약 영역이 없습니다."));
   if (rules.recommendedAudience && !document.hasRecommendedAudience) problems.push(issue("WARNING", "contentQuality", "recommended-audience-missing", "추천 대상 영역이 없습니다."));
   if (rules.relatedSection && !document.hasRelatedSection) problems.push(issue("WARNING", "internalLinks", "related-section-missing", "관련 페이지 영역이 없습니다."));
   return problems;

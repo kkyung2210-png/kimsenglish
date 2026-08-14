@@ -5,6 +5,16 @@ const root = path.resolve(__dirname, "..");
 const contentPath = path.join(root, "config", "content");
 const FILES = ["intro", "lesson", "benefit", "faq", "cta", "examples"];
 const TOPIC_PRIORITY = ["toeic", "opic", "ielts", "toefl", "japanese", "english", "business", "travel", "exam", "conversation"];
+const TARGET_CTA_TITLES = [
+  (v) => `${v.region} ${v.target} ${v.service} 수업, 내 상황에도 맞을까요?`,
+  (v) => `${v.region} ${v.target} ${v.service}, 지금 시작해도 괜찮을까요?`,
+  (v) => `${v.target} ${v.service} 수업을 ${v.region}에서 찾고 계신가요?`,
+  (v) => `${v.region} ${v.service} 수업이 ${v.target}에게 어떻게 진행되는지 물어보세요`,
+  (v) => `${v.region}에서 ${v.target} ${v.service}를 배우려면 어디서 시작해야 할까요?`,
+  (v) => `${v.target}에게 맞는 ${v.region} ${v.service} 수업을 함께 찾아드립니다`,
+  (v) => `${v.region} ${v.target} ${v.service} 상담, 궁금한 점부터 편하게 물어보세요`,
+  (v) => `${v.target} ${v.service} 공부가 고민이라면 ${v.region}에서 상담받아 보세요`,
+];
 let cachedConfig = null;
 const eligiblePoolCache = new Map();
 
@@ -98,8 +108,8 @@ function makeVariables(page, context) {
     province: page.province || "전국",
     region: page.region || "지역",
     subject: page.subject || context.service,
-    target: page.target || "학습자",
-    audience: page.target ? `${page.target} 학습자` : "학습자",
+    target: page.target || "수강생",
+    audience: page.target || "수강생",
     keyword: page.keyword,
     service: context.service,
     intent: context.intent,
@@ -127,13 +137,18 @@ function createPageContent(page, context) {
     answer: renderText(item.answer, variables),
   }));
   const intro = renderOne("intro");
-  const lesson = `${renderOne("lesson")} 이 과정은 ${page.keyword} 학습 목표에 맞춰 조정합니다.`;
-  const benefit = `${renderOne("benefit")} 변화 과정은 ${page.keyword} 수업에서 단계적으로 확인합니다.`;
+  const localLessonLead = `${page.region} ${page.target ? `${page.target} ` : ""}${context.service} 수업에서는`;
+  const contextualSentence = (text) => `${localLessonLead} ${text}`;
+  const lesson = contextualSentence(renderOne("lesson"));
+  const benefit = contextualSentence(renderOne("benefit"));
   const exampleItems = selectTopicTemplates("examples", config.examples, tags, `${seed}|examples`, 2)
-    .map((item) => `${renderText(item.text, variables)} 이 활동은 ${page.keyword} 수업에서 학습 수준에 맞춰 조정합니다.`);
+    .map((item) => contextualSentence(renderText(item.text, variables)));
   const ctaTemplate = selectTopicTemplates("cta", config.cta, tags, `${seed}|cta`)[0];
   let ctaTitle = renderText(ctaTemplate.title, variables);
-  if (!ctaTitle.includes(page.region)) ctaTitle = `${page.region}에서 ${ctaTitle}`;
+  if (page.target) {
+    const titlePattern = TARGET_CTA_TITLES[stableHash(`${seed}|cta-title`) % TARGET_CTA_TITLES.length];
+    ctaTitle = titlePattern({ region: page.region, target: page.target, service: context.service });
+  } else if (!ctaTitle.includes(page.region)) ctaTitle = `${page.region}에서 ${ctaTitle}`;
   return Object.freeze({
     intro,
     lesson,
@@ -142,7 +157,7 @@ function createPageContent(page, context) {
     faqs: Object.freeze(faqItems),
     cta: Object.freeze({
       title: ctaTitle,
-      text: `${renderText(ctaTemplate.text, variables)} ${page.keyword} 상담에서 필요한 시작점을 확인할 수 있습니다.`,
+      text: renderText(ctaTemplate.text, variables),
       label: renderText(ctaTemplate.label, variables),
     }),
   });

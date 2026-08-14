@@ -76,7 +76,7 @@ function parseDocument(filePath, distPath) {
   const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
   const jsonLdTexts = scripts.filter((match) => attribute(`<script ${match[1]}>`, "type").toLowerCase() === "application/ld+json").map((match) => match[2].trim());
   const text = stripTags(html.replace(/<script\b[\s\S]*?<\/script>/gi, " ").replace(/<style\b[\s\S]*?<\/style>/gi, " ").replace(/<svg\b[\s\S]*?<\/svg>/gi, " "));
-  const aiSummaryBlock = (html.match(/class="[^"]*ai-summary[^"]*"[^>]*>([\s\S]*?)<\/div>/i) || [])[1] || "";
+  const lessonSummaryBlock = (html.match(/class="[^"]*lesson-summary[^"]*"[^>]*>([\s\S]*?)<\/div>/i) || [])[1] || "";
   const consultationBlock = (html.match(/id="consultation"[^>]*>([\s\S]*?)<\/section>/i) || [])[1] || "";
   const robots = metaContent(html, "robots");
   const lang = attribute((html.match(/<html\b[^>]*>/i) || [""])[0], "lang");
@@ -88,10 +88,10 @@ function parseDocument(filePath, distPath) {
     text, textLength: text.replace(/\s/g, "").length, lang, robots,
     viewport: metaContent(html, "viewport"), hasBreadcrumb: /class="[^"]*breadcrumb[^"]*"/i.test(html),
     hasCta: /class="[^"]*(?:cta|mid-cta)[^"]*"/i.test(html) || /id="consultation"/i.test(html),
-    hasFaq: faqQuestions.length > 0, hasAiSummary: /ai-summary-section|AI Summary/i.test(html),
+    hasFaq: faqQuestions.length > 0, hasLessonSummary: /lesson-summary-section|수업 상담 요약/i.test(html),
     hasRecommendedAudience: /id="fit"|이런 분께 추천/i.test(html),
     hasRelatedSection: /id="related"|internal-links-section/i.test(html),
-    introduction: stripTags(aiSummaryBlock).slice(0, 500),
+    introduction: stripTags(lessonSummaryBlock).slice(0, 500),
     ctaText: stripTags(consultationBlock).slice(0, 500),
   };
 }

@@ -32,102 +32,63 @@ const processLesson = resolveProcessAsset("lesson", root);
 const processFeedback = resolveProcessAsset("feedback", root);
 const levelTestCtaImage = resolveCtaAsset("levelTest", root);
 
-// 본문 구성 분류를 검증할 때 사용합니다. Hero 문구는 아래 전용 패턴으로 생성합니다.
-const DESCRIPTION_PATTERNS = {
-  conversation: [
-    (c) => `${c.region} ${c.audience} 맞춤 ${c.service} 수업입니다. ${c.intentSentence} ${c.concernSentence} ${c.toneLead} 수업에서는 ${c.focus} 내용을 중심으로 연습합니다.`,
-    (c) => `${c.region}에서 진행하는 ${c.audience} 대상 ${c.service} 안내입니다. ${c.concernSentence} ${c.intentSentence} 주요 수업 내용은 ${c.focus}입니다.`,
-    (c) => `${c.region} ${c.service} 수업을 알아보는 ${c.audience}에게 필요한 내용을 담았습니다. ${c.intentSentence} ${c.concernSentence} ${c.toneLead} ${c.focus} 중심으로 진행합니다.`,
-    (c) => `${c.region} ${c.service} 수업은 ${c.audience}의 현재 목적을 먼저 확인합니다. ${c.intentSentence} ${c.concernSentence} 학습 범위에는 ${c.focus} 내용이 포함됩니다.`,
-    (c) => `${c.region}에서 시작하는 ${c.audience} 대상 ${c.service} 수업입니다. ${c.concernSentence} ${c.intentSentence} ${c.toneLead} ${c.focus} 내용을 차근차근 다룹니다.`,
-    (c) => `${c.region}에서 ${c.service} 수업을 찾는 ${c.audience}에게 필요한 방향을 안내합니다. ${c.intentSentence} ${c.concernSentence} 핵심 학습 내용은 ${c.focus}입니다.`,
-    (c) => `${c.region} ${c.audience} 대상 ${c.service} 수업입니다. ${c.intentSentence} ${c.methodSentence} 수업 초점은 ${c.focus}입니다.`,
-    (c) => `${c.region}에서 ${c.service} 학습을 시작하는 ${c.audience}를 위한 안내입니다. ${c.concernSentence} ${c.resultSentence} ${c.toneLead} 진행합니다.`,
-  ],
-  exam: [
-    (c) => `${c.region} ${c.audience} 대상 ${c.service} 준비 수업입니다. ${c.intentSentence} ${c.concernSentence} ${c.toneLead} 먼저 ${c.focus} 내용을 정리합니다.`,
-    (c) => `${c.region}에서 ${c.service} 준비가 필요한 ${c.audience}를 위한 안내입니다. ${c.concernSentence} ${c.intentSentence} 단계별 학습 내용은 ${c.focus}입니다.`,
-    (c) => `${c.region} ${c.service} 준비 방향을 알아보는 ${c.audience}에게 필요한 내용을 담았습니다. ${c.intentSentence} ${c.concernSentence} ${c.toneLead} ${c.focus} 중심으로 학습합니다.`,
-    (c) => `${c.region} ${c.service} 수업은 ${c.audience}의 학습 목적부터 확인합니다. ${c.concernSentence} ${c.intentSentence} 우선 다룰 내용은 ${c.focus}입니다.`,
-    (c) => `${c.region}에서 진행하는 ${c.audience} 대상 ${c.service} 학습 안내입니다. ${c.intentSentence} ${c.concernSentence} ${c.focus} 내용을 순서대로 점검합니다.`,
-    (c) => `${c.region}에서 ${c.service} 학습 방향을 찾는 ${c.audience}에게 필요한 기준을 안내합니다. ${c.concernSentence} ${c.intentSentence} 핵심 준비 내용은 ${c.focus}입니다.`,
-    (c) => `${c.region} ${c.audience} 대상 ${c.service} 준비 안내입니다. ${c.intentSentence} ${c.methodSentence} 기대하는 변화는 ${c.result}입니다.`,
-    (c) => `${c.region}에서 ${c.service} 준비를 시작하는 ${c.audience}를 위한 수업입니다. ${c.concernSentence} ${c.focus} 내용을 우선해 ${c.toneLead} 진행합니다.`,
-  ],
-  business: [
-    (c) => `${c.region} ${c.audience}의 업무 목적을 반영한 ${c.service} 수업입니다. ${c.intentSentence} ${c.concernSentence} ${c.toneLead} 수업 초점은 ${c.focus}입니다.`,
-    (c) => `${c.region}에서 진행하는 ${c.audience} 대상 ${c.service} 안내입니다. ${c.concernSentence} ${c.intentSentence} 실무 학습 내용은 ${c.focus}입니다.`,
-    (c) => `${c.region}에서 업무용 ${c.service} 수업을 찾는 ${c.audience}에게 필요한 내용을 담았습니다. ${c.intentSentence} ${c.concernSentence} ${c.focus} 중심으로 연습합니다.`,
-    (c) => `${c.region} ${c.service} 수업은 ${c.audience}의 사용 목적부터 확인합니다. ${c.concernSentence} ${c.intentSentence} ${c.toneLead} ${c.focus} 내용을 익힙니다.`,
-    (c) => `${c.region} ${c.audience} 대상 ${c.service} 수업 안내입니다. ${c.intentSentence} ${c.concernSentence} 업무에 필요한 학습 내용은 ${c.focus}입니다.`,
-    (c) => `${c.region}에서 ${c.service} 활용을 준비하는 ${c.audience}에게 필요한 방향을 안내합니다. ${c.concernSentence} ${c.intentSentence} ${c.focus} 내용을 실제 목적에 맞춰 연습합니다.`,
-    (c) => `${c.region} ${c.audience} 대상 ${c.service} 수업입니다. ${c.intentSentence} ${c.methodSentence} 업무 학습 초점은 ${c.focus}입니다.`,
-    (c) => `${c.region}에서 ${c.service} 활용을 시작하는 ${c.audience}를 위한 안내입니다. ${c.concernSentence} ${c.resultSentence} ${c.toneLead} 진행합니다.`,
-  ],
-  travel: [
-    (c) => `${c.region} ${c.audience} 대상 ${c.service} 준비 수업입니다. ${c.intentSentence} ${c.concernSentence} ${c.toneLead} 여행 상황에 맞춰 ${c.focus} 내용을 연습합니다.`,
-    (c) => `${c.region}에서 진행하는 ${c.audience} 대상 ${c.service} 안내입니다. ${c.concernSentence} ${c.intentSentence} 먼저 익힐 내용은 ${c.focus}입니다.`,
-    (c) => `${c.region}에서 여행용 ${c.service} 수업을 찾는 ${c.audience}에게 필요한 내용을 담았습니다. ${c.intentSentence} ${c.concernSentence} ${c.focus} 중심으로 준비합니다.`,
-    (c) => `${c.region} ${c.service} 수업은 ${c.audience}의 여행 목적부터 확인합니다. ${c.concernSentence} ${c.intentSentence} ${c.toneLead} ${c.focus} 내용을 상황별로 다룹니다.`,
-    (c) => `${c.region} ${c.audience} 대상 ${c.service} 수업 안내입니다. ${c.intentSentence} ${c.concernSentence} 여행에서 필요한 학습 내용은 ${c.focus}입니다.`,
-    (c) => `${c.region}에서 ${c.service} 준비가 필요한 ${c.audience}에게 학습 방향을 안내합니다. ${c.concernSentence} ${c.intentSentence} ${c.focus} 내용을 여행 흐름에 맞춰 익힙니다.`,
-    (c) => `${c.region} ${c.audience} 대상 ${c.service} 준비 안내입니다. ${c.intentSentence} ${c.methodSentence} 여행 학습 초점은 ${c.focus}입니다.`,
-    (c) => `${c.region}에서 ${c.service} 준비를 시작하는 ${c.audience}를 위한 수업입니다. ${c.concernSentence} ${c.resultSentence} ${c.toneLead} 진행합니다.`,
-  ],
-};
-
 // 실제 학원 홈페이지에서 자연스럽게 쓰는 표현을 분류별로 섞어 페이지 간 중복을 줄입니다.
 const HERO_SECOND_SENTENCES = {
   conversation: [
-    "기초 표현부터 실전 대화까지 단계별로 익히며, 말하기가 자연스러워지도록 꼼꼼하게 지도합니다.",
+    "기초 표현을 익힌 뒤 바로 대화에 써 보며, 말문이 막히는 부분은 여러 상황으로 바꿔 다시 연습합니다.",
     "현재 실력에 맞춘 1:1 맞춤 수업으로 부족한 부분을 보완하고, 자주 쓰는 표현을 반복해서 연습합니다.",
-    "학습 목표에 맞춰 필요한 표현부터 배우고, 다양한 상황에서 직접 말해 보는 연습을 진행합니다.",
-    "처음 배우는 분도 기초부터 차근차근 시작하며, 듣기와 말하기를 균형 있게 익힐 수 있습니다.",
-    "수준과 학습 속도를 고려한 개별 수업으로, 배운 문장을 실제 대화에 활용하도록 도와드립니다.",
-    "간단한 문장 만들기부터 상황별 회화까지 순서대로 배우며, 부족한 부분은 반복해서 복습합니다.",
-    "현재 수준을 먼저 확인한 뒤 필요한 어휘와 문장을 익히고, 충분한 말하기 연습을 이어갑니다.",
-    "원하는 학습 방향에 맞춰 수업 내용을 구성하고, 일상에서 바로 쓸 수 있는 표현을 중심으로 배웁니다.",
+    "어디에서 말이 막히는지 살펴보고, 지금 가장 자주 쓰게 될 표현부터 입에 익도록 수업합니다.",
+    "처음 시작하는 분은 인사와 짧은 답변부터, 경험이 있는 분은 대화를 길게 이어 가는 연습부터 시작합니다.",
+    "배운 문장을 외우는 데서 끝내지 않고 질문을 바꾸어도 자신의 말로 답할 수 있을 때까지 연습합니다.",
+    "간단한 문장을 직접 만든 뒤 상황 대화로 이어 가며, 틀린 표현은 그 자리에서 자연스럽게 고쳐드립니다.",
+    "듣기는 되는데 답이 바로 나오지 않는다면 짧은 응답부터 반복해 말하는 속도를 끌어올립니다.",
+    "일상에서 실제로 쓰는 장면을 골라 말해 보고, 다음 수업에서는 같은 표현을 다른 상황에 다시 써봅니다.",
   ],
   exam: [
-    "현재 점수와 목표를 확인한 뒤 영역별 학습 계획을 세우고, 취약 유형을 단계적으로 보완합니다.",
+    "최근 점수와 풀이 과정을 함께 보고, 점수를 가장 많이 잃는 영역부터 공부 순서를 다시 잡습니다.",
     "목표 점수에 맞춘 1:1 맞춤 수업으로 핵심 개념부터 문제 풀이와 오답 정리까지 꼼꼼히 진행합니다.",
     "기초 개념을 확실히 정리한 뒤 출제 유형별 문제를 풀며, 실전 감각과 시간 관리 능력을 높입니다.",
-    "개인별 약점을 정확히 파악해 필요한 영역에 집중하고, 반복되는 실수를 줄이도록 지도합니다.",
-    "시험 일정과 학습 목표에 맞춰 진도를 구성하며, 개념 학습과 실전 문제 풀이를 균형 있게 진행합니다.",
+    "틀린 문제의 정답만 외우지 않고 왜 그 선택지를 골랐는지까지 짚어 같은 실수가 반복되지 않게 합니다.",
+    "시험일까지 남은 기간을 계산해 개념 정리와 실전 문제 풀이의 비중을 현실적으로 나눕니다.",
     "현재 실력에 알맞은 학습 순서를 정하고, 자주 틀리는 문제를 중심으로 오답 관리까지 함께합니다.",
-    "영역별 기초부터 실전 대비까지 단계별로 배우며, 목표 점수에 필요한 풀이 방법을 익힙니다.",
-    "학습 기간과 목표 등급을 고려한 개별 수업으로, 필요한 유형을 집중적으로 연습할 수 있습니다.",
+    "기초가 약한 영역은 개념과 쉬운 문제를 함께 다루고, 익숙한 영역은 시간 안에 푸는 훈련에 집중합니다.",
+    "학습 기간과 원하는 등급을 바탕으로 필요한 유형을 골라 연습하고 매주 점수 흐름을 살펴봅니다.",
   ],
   business: [
-    "현재 업무와 필요한 상황을 확인한 뒤, 회의와 이메일에 바로 활용할 표현을 중심으로 연습합니다.",
+    "실제로 영어가 필요한 업무 장면을 듣고, 다음 회의나 이메일에서 바로 쓸 문장부터 다듬습니다.",
     "직무와 학습 목표에 맞춘 1:1 맞춤 수업으로 실무에 필요한 말하기와 문장 작성을 익힙니다.",
-    "기본 비즈니스 표현부터 실제 업무 상황별 대화까지 단계적으로 배우며 활용도를 높입니다.",
+    "기본 비즈니스 표현을 실제 업무 대화에 넣어 보고, 상대와 상황에 맞는 어조까지 함께 손봅니다.",
     "자주 사용하는 업무 표현을 정리하고, 역할 연습과 문장 교정을 통해 정확한 전달력을 기릅니다.",
-    "현재 실력과 업무 환경에 맞춰 수업을 구성하며, 필요한 표현을 반복해 자연스럽게 익힙니다.",
+    "평소 쓰는 이메일이나 발표 문장을 가져오면 뜻은 살리면서 더 정확하고 자연스러운 표현으로 고쳐드립니다.",
     "이메일과 전화, 회의 등 필요한 분야를 우선해 배우고 실제 상황처럼 충분히 연습합니다.",
-    "개인별 업무 목적에 맞는 어휘와 문장을 익히며, 자연스럽고 정확한 의사소통을 준비합니다.",
+    "직무에서 자주 쓰는 어휘와 문장을 골라 익히고, 상대의 질문에 바로 답하는 연습까지 이어갑니다.",
     "실무에서 자주 마주치는 상황을 바탕으로 수업하며, 부족한 표현과 문장을 꼼꼼히 교정합니다.",
   ],
   travel: [
     "공항과 숙소, 식당 등 여행에서 자주 만나는 상황을 중심으로 꼭 필요한 표현부터 배웁니다.",
     "현재 실력에 맞춘 1:1 맞춤 수업으로 기본 문장부터 상황별 대화까지 차근차근 연습합니다.",
-    "여행 일정과 학습 목표에 맞춰 필요한 표현을 골라 배우고, 실제 상황처럼 대화를 반복합니다.",
-    "처음 배우는 분도 인사와 질문 같은 기초 표현부터 시작해 여행 대화를 자연스럽게 익힐 수 있습니다.",
-    "출국 전에 꼭 필요한 문장을 정리하고, 현지에서 바로 말할 수 있도록 상황별로 연습합니다.",
-    "여행 중 자주 쓰는 질문과 답변을 단계별로 배우며, 낯선 상황에도 대응할 수 있도록 준비합니다.",
-    "개인별 여행 목적에 맞춰 수업 내용을 구성하고, 듣기와 말하기를 함께 충분히 연습합니다.",
-    "기초 회화부터 현지에서 필요한 실용 표현까지 배우며, 자신 있게 말하는 연습을 이어갑니다.",
+    "여행 일정에 맞춰 쓸 가능성이 높은 표현을 고르고, 직원과 실제로 대화하듯 여러 번 주고받습니다.",
+    "처음 배우는 분은 인사와 질문부터 시작해 예약 확인과 요청까지 직접 말해 봅니다.",
+    "출국 전에 꼭 필요한 문장을 입에 익히고, 현지에서 질문을 알아듣지 못했을 때 대처하는 말도 준비합니다.",
+    "길 찾기나 예약 오류처럼 예상 밖의 상황도 역할 대화로 연습해 당황하지 않고 요청할 수 있게 합니다.",
+    "여행 목적지와 일정에 맞게 장면을 고른 뒤 듣기와 말하기를 한 수업 안에서 함께 연습합니다.",
+    "완벽한 문법을 기다리지 않고 짧아도 뜻이 분명한 문장부터 직접 말하며 자신감을 붙입니다.",
   ],
 };
 
-const TONE_PROFILES = {
-  "친근형": { lead: "부담 없이", direct: "처음이어도 현재 수준부터 편하게 시작할 수 있습니다.", faq: "네. 편하게 현재 상황부터 알려주시면 됩니다." },
-  "신뢰형": { lead: "현재 수준과 목적을 확인한 뒤", direct: "현재 수준과 학습 목적을 먼저 확인해 필요한 내용을 정합니다.", faq: "네. 현재 상황을 먼저 확인한 뒤 알맞은 방향을 안내합니다." },
-  "전문형": { lead: "학습 요소를 단계적으로 나누어", direct: "학습 목표와 필요한 요소를 구분해 순서대로 진행합니다.", faq: "네. 목표와 현재 수준을 기준으로 학습 요소를 구분합니다." },
-  "목표달성형": { lead: "목표에 필요한 내용을 우선해", direct: "원하는 목표에 필요한 내용을 먼저 정하고 학습 순서를 구성합니다.", faq: "네. 목표를 확인한 뒤 우선순위에 맞춰 진행합니다." },
-  "차분형": { lead: "서두르지 않고 현재 속도에 맞춰", direct: "현재 속도에 맞춰 필요한 내용을 하나씩 익힐 수 있습니다.", faq: "네. 서두르지 않고 현재 수준에 맞춰 진행합니다." },
-  "코칭형": { lead: "학습 과정을 함께 점검하며", direct: "학습 과정과 어려운 지점을 함께 점검하며 다음 단계를 정합니다.", faq: "네. 현재 고민을 함께 확인하고 다음 학습 단계를 정합니다." },
-};
+const HERO_OPENING_PATTERNS = [
+  (c) => `${c.region}에서 ${c.lessonName} 수업을 찾고 계신다면 지금 실력에서 필요한 내용부터 시작할 수 있습니다.`,
+  (c) => `${c.lessonName} 수업을 처음 시작한다면 ${c.region}에서도 기초부터 1:1로 배울 수 있습니다.`,
+  (c) => `${c.region} ${c.lessonName} 수업은 정해진 진도보다 현재 실력과 배우는 이유를 먼저 봅니다.`,
+  (c) => `${c.region}에서 ${c.lessonName} 실력을 늘리고 싶다면 자주 막히는 부분부터 수업에서 직접 다뤄봅니다.`,
+  (c) => `${c.lessonName} 공부를 다시 시작하려는 분께 ${c.region} 1:1 수업이 맞는 출발점을 찾아드립니다.`,
+  (c) => `${c.region} ${c.lessonName} 수업을 고민 중이라면 잘하는 부분과 보완할 부분을 나누어 시작합니다.`,
+  (c) => `${c.region}에서 배우는 ${c.lessonName}, 교재보다 실제로 쓰려는 상황에 맞춰 수업 내용을 정합니다.`,
+  (c) => `${c.lessonName} 때문에 고민이 있다면 ${c.region} 수업에서 지금 필요한 연습부터 함께 해볼 수 있습니다.`,
+];
+
+const CONTENT_TEMPLATE_TYPES = new Set(["conversation", "exam", "business", "travel"]);
+const CONTENT_TONES = new Set(["친근형", "신뢰형", "전문형", "목표달성형", "차분형", "코칭형"]);
 
 const PROCESS_STEPS = {
   conversation: [
@@ -156,8 +117,8 @@ const PROCESS_STEPS = {
   ],
 };
 
-// 템플릿이 실수로 줄어들면 페이지를 만들기 전에 바로 알려줍니다.
-for (const [name, patterns] of Object.entries(DESCRIPTION_PATTERNS)) {
+// 과목별 문장 풀이 줄어들면 페이지를 만들기 전에 바로 알려줍니다.
+for (const [name, patterns] of Object.entries(HERO_SECOND_SENTENCES)) {
   if (patterns.length < 8) throw new Error(`${name} description 패턴은 최소 8개가 필요합니다.`);
 }
 
@@ -235,18 +196,6 @@ function firstValue(object, ...keys) {
   return "";
 }
 
-function asSentence(value) {
-  const clean = String(value || "").trim();
-  if (!clean) return "";
-  return /[.!?。]$/.test(clean) ? clean : `${clean}.`;
-}
-
-// 검색의도는 완성 문장보다 짧은 구절로 입력되는 경우가 많아 문장으로 감쌉니다.
-function asIntentSentence(value) {
-  const clean = String(value || "").trim().replace(/[.!?。]+$/, "");
-  return clean ? `수업은 “${clean}”이라는 필요를 반영합니다.` : "";
-}
-
 function stableHash(value) {
   let hash = 2166136261;
   for (const character of String(value)) {
@@ -254,42 +203,6 @@ function stableHash(value) {
     hash = Math.imul(hash, 16777619);
   }
   return hash >>> 0;
-}
-
-function shortPhrase(value, maximumLength = 32) {
-  const clean = String(value || "").trim().replace(/[.!?。]+$/, "").replace(/\s+/g, " ");
-  if (clean.length <= maximumLength) return clean;
-  const sliced = clean.slice(0, maximumLength + 1);
-  const lastSpace = sliced.lastIndexOf(" ");
-  return `${lastSpace > maximumLength * 0.55 ? sliced.slice(0, lastSpace) : clean.slice(0, maximumLength)}…`;
-}
-
-function toneAdjective(tone) {
-  return ({
-    "친근형": "편안한", "신뢰형": "차분하고 분명한", "전문형": "체계적인",
-    "목표달성형": "목표 중심", "차분형": "차분한", "코칭형": "함께 점검하는",
-  })[tone] || "차분한";
-}
-
-function fitMetaDescription(value, context) {
-  let result = String(value || "").replace(/\s+/g, " ").trim();
-  if (result.length > 150) {
-    const sentences = result.match(/[^.!?。]+[.!?。]/g) || [result];
-    result = "";
-    for (const sentence of sentences) {
-      const candidate = `${result} ${sentence.trim()}`.trim();
-      if (candidate.length <= 150) result = candidate;
-    }
-  }
-  if (result.length < 80) {
-    const extra = `수업 초점은 “${shortPhrase(context.focus)}”입니다.`;
-    if (`${result} ${extra}`.length <= 150) result = `${result} ${extra}`;
-  }
-  if (result.length < 80) {
-    const extra = `${context.toneLead} 필요한 내용을 순서대로 안내합니다.`;
-    if (`${result} ${extra}`.length <= 150) result = `${result} ${extra}`;
-  }
-  return result.trim();
 }
 
 function inferSuffix(raw, detailKeyword, keyword) {
@@ -301,13 +214,13 @@ function inferSuffix(raw, detailKeyword, keyword) {
 
 function normalizeTone(value) {
   const tone = String(value || "").trim();
-  return TONE_PROFILES[tone] ? tone : "차분형";
+  return CONTENT_TONES.has(tone) ? tone : "차분형";
 }
 
 function normalizeContentTemplate(page) {
   // 새 final의 template 값을 최우선으로 사용합니다.
   const explicitTemplate = String(page.template || "").trim().toLowerCase();
-  if (Object.hasOwn(DESCRIPTION_PATTERNS, explicitTemplate)) return explicitTemplate;
+  if (CONTENT_TEMPLATE_TYPES.has(explicitTemplate)) return explicitTemplate;
   // template 값이 비어 있는 기존 CSV만 검색의도와 수업 자료에서 종류를 보조 판단합니다.
   const value = `${page.template} ${page.category} ${page.detailKeyword} ${page.title} ${page.searchIntent} ${page.summary} ${page.lessonFocus}`.toLowerCase();
   if (/travel|여행/.test(value)) return "travel";
@@ -364,22 +277,38 @@ function validateFinalContent(page) {
     if (!String(value || "").trim()) throw new Error(`${page.slug}: ${name} 값이 비어 있습니다.`);
   }
   const template = page.template.toLowerCase();
-  if (!Object.hasOwn(DESCRIPTION_PATTERNS, template)) throw new Error(`${page.slug}: template 값이 올바르지 않습니다.`);
-  if (Object.hasOwn(DESCRIPTION_PATTERNS, page.searchIntent.toLowerCase())) {
+  if (!CONTENT_TEMPLATE_TYPES.has(template)) throw new Error(`${page.slug}: template 값이 올바르지 않습니다.`);
+  if (CONTENT_TEMPLATE_TYPES.has(page.searchIntent.toLowerCase())) {
     throw new Error(`${page.slug}: search_intent에 template 이름이 들어 있습니다.`);
   }
 }
 
+function humanizeSourcePhrase(value) {
+  return String(value || "")
+    .replace(/차분하고 분명한 안내입니다[.]?/g, "")
+    .replace(/체계적으로/g, "꼼꼼하게")
+    .replace(/단계적으로/g, "하나씩")
+    .replace(/효율적으로/g, "집중해서")
+    .replace(/부담 없이/g, "자연스럽게")
+    .replace(/쉽게 익힐 수 있습니다/g, "충분히 익힐 때까지 연습합니다")
+    .replace(/수업 초점은/g, "수업에서는")
+    .replace(/기대 변화는/g, "수업 후에는")
+    .replace(/먼저 확인해 보세요/g, "함께 살펴봅니다")
+    .replace(/안내합니다/g, "말씀드립니다")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function makeContentContext(page) {
   const service = `${page.detailKeyword}${page.suffix ? ` ${page.suffix}` : ""}`;
-  const audience = page.target ? `${page.target} 학습자` : "학습자";
+  const audience = page.target || "수강생";
   const location = [page.province, page.region].filter(Boolean).join(" ");
-  const intent = page.searchIntent || `${location}에서 ${service} 수업을 찾는 분`;
-  const concern = page.summary || page.legacyDescription || `${service} 학습 방향을 정하기 어려운 상황`;
-  const focus = page.lessonFocus || `${service}의 기초와 실제 활용`;
-  const method = page.lessonMethod || "현재 수준을 확인한 뒤 설명과 연습 및 복습을 순서대로 진행합니다.";
-  const result = page.lessonResult || "배운 내용을 필요한 상황에서 스스로 활용하는 것을 목표로 합니다.";
-  const toneProfile = TONE_PROFILES[page.tone];
+  const intent = humanizeSourcePhrase(page.searchIntent || `${location}에서 ${service} 수업을 찾는 분`);
+  const summarizedConcern = String(page.summary || "").match(/핵심 고민(?:은 [“\"]|:\s*)([^”\"]+?)(?:[”\"]|$)/);
+  const concern = humanizeSourcePhrase(summarizedConcern?.[1] || `${service}를 공부해도 필요한 순간에 바로 활용하기 어려움`);
+  const focus = humanizeSourcePhrase(page.lessonFocus || `${service}의 기초와 실제 활용`);
+  const method = humanizeSourcePhrase(page.lessonMethod || "현재 실력에 맞춰 설명하고 직접 연습한 뒤 다시 복습합니다.");
+  const result = humanizeSourcePhrase(page.lessonResult || "배운 내용을 필요한 상황에서 자신의 말과 풀이로 활용합니다.");
   return {
     province: page.province,
     city: page.region,
@@ -393,13 +322,6 @@ function makeContentContext(page) {
     method,
     result,
     tone: page.tone,
-    toneLead: toneProfile.lead,
-    directTone: toneProfile.direct,
-    faqTone: toneProfile.faq,
-    intentSentence: asIntentSentence(intent),
-    concernSentence: asSentence(concern),
-    methodSentence: asSentence(method),
-    resultSentence: asSentence(result),
   };
 }
 
@@ -407,11 +329,10 @@ function makeDescription(page, context) {
   const templateType = normalizeContentTemplate(page);
   const patterns = HERO_SECOND_SENTENCES[templateType];
   const hash = stableHash(page.slug);
+  const detailHash = stableHash(`${page.slug}|hero-detail`);
   const lessonName = [page.target, context.service].filter(Boolean).join(" ");
-  const opening = hash % 2 === 0
-    ? `${context.city}에서 ${lessonName} 수업을 찾고 계신다면, 현재 실력과 학습 목표에 맞는 수업으로 시작해 보세요.`
-    : `${context.city}에서 ${lessonName} 수업을 배우고 싶다면, 개인별 수준과 필요한 학습 방향을 먼저 확인해 보세요.`;
-  return `${opening} ${patterns[hash % patterns.length]}`;
+  const opening = HERO_OPENING_PATTERNS[hash % HERO_OPENING_PATTERNS.length]({ region: context.city, lessonName });
+  return `${opening} ${patterns[detailHash % patterns.length]}`;
 }
 
 function makeQuestionHeading(page, context) {
@@ -440,16 +361,16 @@ function processHtml(type) {
     .join("");
 }
 
-function aiSummaryHtml(page, context) {
-  const audience = page.target ? `${page.target} 학습자` : `${context.service} 수업을 찾는 학습자`;
+function lessonSummaryHtml(page, context) {
+  const audience = page.target || `${context.service} 수업을 찾는 분`;
   const points = [
-    `<strong>추천 대상:</strong> ${escapeHtml(`${page.region}에서 ${audience}로 수업을 알아보는 분`)}`,
-    `<strong>소개 수업:</strong> ${escapeHtml(`${context.service}의 현재 수준과 목표를 반영한 맞춤 수업`)}`,
-    `<strong>도움이 되는 상황:</strong> ${escapeHtml(context.concern)}`,
-    `<strong>핵심 학습:</strong> ${escapeHtml(context.focus)}`,
-    `<strong>진행 방향:</strong> ${escapeHtml(context.method)}`,
+    `<strong>이런 분께:</strong> ${escapeHtml(`${page.region}에서 ${audience} 수업을 알아보는 분`)}`,
+    `<strong>수업 기준:</strong> ${escapeHtml(`${context.service}의 현재 실력과 실제 사용 목적`)}`,
+    `<strong>자주 듣는 고민:</strong> ${escapeHtml(context.concern)}`,
+    `<strong>함께 연습할 내용:</strong> ${escapeHtml(context.focus)}`,
+    `<strong>수업 방법:</strong> ${escapeHtml(context.method)}`,
   ];
-  return `<section class="section ai-summary-section" aria-labelledby="ai-summary-title"><div class="container"><div class="ai-summary"><p class="section-kicker">AI Summary</p><h2 id="ai-summary-title">${escapeHtml(page.region)} ${escapeHtml(context.service)}, 누구에게 어떤 도움이 될까요?</h2><p>${escapeHtml(page.intelligence.intro)}</p><ul>${points.map((point) => `<li>${point}</li>`).join("")}</ul></div></div></section>`;
+  return `<section class="section lesson-summary-section" aria-labelledby="lesson-summary-title"><div class="container"><div class="lesson-summary"><p class="section-kicker">수업 상담 요약</p><h2 id="lesson-summary-title">${escapeHtml(page.region)} ${escapeHtml(context.service)}, 내 상황에도 맞을까요?</h2><p>${escapeHtml(page.intelligence.intro)}</p><ul>${points.map((point) => `<li>${point}</li>`).join("")}</ul></div></div></section>`;
 }
 
 /** 페이지마다 선택된 예시를 실제 수업 장면으로 보여줍니다. */
@@ -547,7 +468,7 @@ for (const [index, page] of selectedPages.entries()) {
   const context = page.content;
   const faqs = makeFaqs(page, context);
   const faqHtml = faqs.map((faq, faqIndex) => `<details class="faq-item"${faqIndex === 0 ? " open" : ""}><summary><h3>${escapeHtml(faq.question)}</h3></summary><div class="faq-answer"><p>${escapeHtml(faq.answer)}</p></div></details>`).join("");
-  const aiSummary = aiSummaryHtml(page, context);
+  const lessonSummary = lessonSummaryHtml(page, context);
   const lessonExamples = examplesHtml(page, context);
   const canonicalUrl = `${baseUrl}/${page.slug}/`;
   const directAnswer = page.intelligence.intro;
@@ -564,11 +485,11 @@ for (const [index, page] of selectedPages.entries()) {
   const pageAssetAlt = `${page.region} ${page.subject} 맞춤 수업 안내`;
   const pageMedia = renderImageBox(pageAsset, `page-hero-media asset-${pageAsset.key}`, { alt: pageAssetAlt });
   const main = `<section class="hero"><div class="container"><nav class="breadcrumb" aria-label="현재 위치"><ol><li><a href="/">홈</a></li>${breadcrumbMiddle}<li aria-current="page">${escapeHtml(page.title)}</li></ol></nav><div class="hero-layout"><div><p class="eyebrow">${eyebrow}</p><h1>${escapeHtml(page.h1)}</h1><p class="lead">${escapeHtml(page.description)}</p><div class="hero-actions"><a class="button" href="${contactUrl}">${escapeHtml(page.intelligence.cta.label)}</a><a class="button button-secondary" href="#process">수업 진행 방법 보기</a></div></div><aside class="hero-panel" aria-label="수업 신뢰 정보">${pageMedia}<h2>${escapeHtml(page.region)} ${escapeHtml(context.service)} 수업 전 확인할 내용</h2><ul class="trust-list"><li>1:1 개별 맞춤</li><li>현재 수준에 맞춘 수업</li><li>회화·시험 목적별 관리</li><li>무료 테스트 수업</li></ul></aside></div></div></section>
-  ${aiSummary}
-  <section class="info-strip" aria-label="핵심 수업 정보"><div class="container info-grid"><article class="info-card"><p class="number">01</p><h2>${escapeHtml(page.region)} 추천 대상</h2><p>${escapeHtml(context.intent)}</p></article><article class="info-card"><p class="number">02</p><h2>${escapeHtml(context.service)} 수업 초점</h2><p>${escapeHtml(context.focus)}</p></article><article class="info-card"><p class="number">03</p><h2>${escapeHtml(context.service)} 진행 방식</h2><p>${escapeHtml(context.method)}</p></article><article class="info-card"><p class="number">04</p><h2>${escapeHtml(context.service)} 기대 변화</h2><p>${escapeHtml(context.result)}</p></article></div></section>
-  <section class="section" id="overview"><div class="container"><div class="section-heading"><p class="section-kicker">수업이 필요한 이유</p><h2>${escapeHtml(makeQuestionHeading(page, context))}</h2></div><div class="answer-box reading" aria-label="수업에 대한 직접 답변"><p class="answer-label">직접 답변</p><p>${escapeHtml(directAnswer)}</p><p>${escapeHtml(context.intent)}</p></div></div></section>
+  ${lessonSummary}
+  <section class="info-strip" aria-label="핵심 수업 정보"><div class="container info-grid"><article class="info-card"><p class="number">01</p><h2>${escapeHtml(page.region)} 추천 대상</h2><p>${escapeHtml(context.intent)}</p></article><article class="info-card"><p class="number">02</p><h2>${escapeHtml(context.service)}에서 배우는 내용</h2><p>${escapeHtml(context.focus)}</p></article><article class="info-card"><p class="number">03</p><h2>${escapeHtml(context.service)} 수업 방법</h2><p>${escapeHtml(context.method)}</p></article><article class="info-card"><p class="number">04</p><h2>${escapeHtml(context.service)} 수업 후 활용</h2><p>${escapeHtml(context.result)}</p></article></div></section>
+  <section class="section" id="overview"><div class="container"><div class="section-heading"><p class="section-kicker">수업이 필요한 이유</p><h2>${escapeHtml(makeQuestionHeading(page, context))}</h2></div><div class="answer-box reading" aria-label="수업에 대한 상담 답변"><p class="answer-label">상담에서 드리는 답변</p><p>${escapeHtml(directAnswer)}</p><p>${escapeHtml(context.intent)}</p></div></div></section>
   <section class="section section-soft" id="process"><div class="container"><div class="section-heading"><p class="section-kicker">4단계 수업 과정</p><h2>${escapeHtml(page.region)} ${escapeHtml(context.service)} 수업은 어떻게 진행되나요?</h2><p class="section-intro">${escapeHtml(page.intelligence.lesson)}</p></div><div class="process-grid">${processHtml(page.contentTemplate)}</div><div class="mid-cta"><div><h2>${escapeHtml(page.intelligence.cta.title)}</h2><p>${escapeHtml(page.intelligence.cta.text)}</p></div><a class="button" href="${contactUrl}">${escapeHtml(page.intelligence.cta.label)}</a></div></div></section>
-  <section class="section" id="management"><div class="container"><div class="section-heading"><p class="section-kicker">${escapeHtml(categoryName)} 학습 관리</p><h2>${escapeHtml(page.region)} ${escapeHtml(context.service)} 수업에서 무엇을 관리하나요?</h2><p class="section-intro">${escapeHtml(page.intelligence.benefit)}</p></div><div class="management-grid"><article class="panel"><div class="panel-icon">01</div><h3>${escapeHtml(context.service)} 학습 전 핵심 고민</h3><p>${escapeHtml(context.concern)}</p></article><article class="panel"><div class="panel-icon">02</div><h3>${escapeHtml(context.service)} 수업의 학습 초점</h3><p>${escapeHtml(context.focus)}</p></article><article class="panel"><div class="panel-icon">03</div><h3>${escapeHtml(context.service)} 수업과 복습 방법</h3><p>${escapeHtml(context.method)} ${escapeHtml(context.result)}</p></article></div></div></section>
+  <section class="section" id="management"><div class="container"><div class="section-heading"><p class="section-kicker">${escapeHtml(categoryName)} 수업 관리</p><h2>${escapeHtml(page.region)} ${escapeHtml(context.service)}, 수업에서는 이렇게 살펴봅니다</h2><p class="section-intro">${escapeHtml(page.intelligence.benefit)}</p></div><div class="management-grid"><article class="panel"><div class="panel-icon">01</div><h3>요즘 가장 어려운 부분</h3><p>${escapeHtml(context.concern)}</p></article><article class="panel"><div class="panel-icon">02</div><h3>수업에서 함께 다룰 내용</h3><p>${escapeHtml(context.focus)}</p></article><article class="panel"><div class="panel-icon">03</div><h3>배우고 다시 써보는 방법</h3><p>${escapeHtml(context.method)} ${escapeHtml(context.result)}</p></article></div></div></section>
   ${lessonExamples}
   <section class="section section-soft" id="fit"><div class="container"><div class="section-heading"><p class="section-kicker">추천 대상</p><h2>${escapeHtml(page.region)} ${escapeHtml(context.service)}, 이런 분께 추천합니다</h2></div><ul class="fit-list"><li>${escapeHtml(context.intent)}</li><li>${escapeHtml(context.concern)}</li><li>${escapeHtml(context.focus)} 내용이 필요한 분</li><li>${escapeHtml(context.result)} 변화를 원하는 분</li></ul></div></section>
   <section class="section section-soft" id="faq"><div class="container"><div class="section-heading"><p class="section-kicker">자주 묻는 질문</p><h2>${escapeHtml(page.region)} ${escapeHtml(context.service)} 수업 전 자주 묻는 질문</h2></div><div class="faq-list">${faqHtml}</div>${page.updated_at ? `<p class="updated">마지막 내용 확인: ${escapeHtml(page.updated_at)}</p>` : ""}</div></section>
@@ -597,22 +518,22 @@ const businessPage = pickRepresentative(pages, (page) => page.contentTemplate ==
 const categoryCards = [["영어회화", "일상과 여행에서 필요한 영어 말하기를 현재 수준부터 연습합니다.", englishPage, englishImage], ["일본어회화", "글자와 기초 표현부터 상황별 일본어 대화를 연결합니다.", japanesePage, japaneseImage], ["시험 대비", "목표와 현재 수준을 확인하고 영역별 학습과 오답 관리를 진행합니다.", examPage, examImage], ["비즈니스", "회의와 이메일 등 실제 업무에 필요한 표현을 목적에 맞춰 연습합니다.", businessPage, businessImage]].map(([title, description, page, image]) => `<a class="category-card" href="/${page.slug}/">${renderImageBox(image, "image-box-square")}<div class="category-card-body"><p class="card-meta">대표 수업</p><h3>${title}</h3><p>${description}</p><span class="text-link">대표 수업 보기 →</span></div></a>`).join("");
 const reviewCardsHtml = reviews.map((review, index) => `<article class="review-card" data-review-slide data-review-id="${escapeHtml(review.id)}" role="group" aria-roledescription="슬라이드" aria-label="${index + 1} / ${reviews.length}"><div class="review-rating" aria-label="5점 만점에 ${review.rating}점"><span aria-hidden="true">${"★".repeat(review.rating)}${"☆".repeat(5 - review.rating)}</span></div><div class="review-person"><strong>${escapeHtml(review.name)} · ${escapeHtml(review.role)}</strong><span>${escapeHtml(review.category)}</span></div><blockquote><p>${escapeHtml(review.review)}</p></blockquote></article>`).join("");
 const reviewCarouselHtml = `<section class="section reviews-section" aria-labelledby="reviews-title" data-review-carousel><div class="container"><div class="review-carousel-heading"><div class="section-heading"><p class="section-kicker">수강 후기</p><h2 id="reviews-title">학습자가 전하는 수업 이야기</h2><p class="section-intro">각자의 목표에 맞춰 수업을 진행하며 느낀 점을 확인해 보세요.</p></div><div class="review-carousel-controls" role="group" aria-label="후기 이동"><button class="review-arrow" type="button" data-review-prev aria-label="이전 후기" aria-controls="review-carousel-viewport"><span aria-hidden="true">←</span></button><button class="review-arrow" type="button" data-review-next aria-label="다음 후기" aria-controls="review-carousel-viewport"><span aria-hidden="true">→</span></button></div></div><div class="review-carousel-viewport" id="review-carousel-viewport" role="region" aria-roledescription="캐러셀" aria-label="수강 후기 11개" tabindex="0"><div class="review-carousel-track" data-review-track>${reviewCardsHtml}</div></div><div class="review-carousel-dots" data-review-dots role="group" aria-label="후기 슬라이드 선택"></div><p class="sr-only" data-review-status aria-live="polite" aria-atomic="true"></p></div></section>`;
-const homeFaqs = [{ question: "처음 배우는 사람도 수업을 시작할 수 있나요?", answer: "네. 현재 수준과 학습 목적을 먼저 확인한 뒤 필요한 기초 내용부터 순서대로 진행합니다." }, { question: "회화와 시험 대비 수업은 어떻게 다른가요?", answer: "회화는 듣기와 상황별 말하기를, 시험 대비는 영역별 개념과 문제풀이 및 오답 관리를 중심으로 구성합니다." }, { question: "상담할 때 무엇을 알려주면 되나요?", answer: "배우려는 과목과 현재 수준, 원하는 목표, 가능한 시간을 알려주시면 수업 방향을 안내합니다." }];
+const homeFaqs = [{ question: "처음 배우는 사람도 수업을 시작할 수 있나요?", answer: "네. 알고 있는 내용부터 짧게 살펴보고 기초 표현이나 개념부터 수업을 시작합니다." }, { question: "회화와 시험 대비 수업은 어떻게 다른가요?", answer: "회화는 듣고 직접 말하는 시간을 충분히 가지며, 시험 대비는 영역별 개념과 문제 풀이 및 오답 습관을 함께 다룹니다." }, { question: "상담할 때 무엇을 알려주면 되나요?", answer: "배우려는 과목과 현재 실력, 원하는 사용 장면이나 시험일, 가능한 시간을 편하게 말씀해 주세요." }];
 const homeFaqHtml = homeFaqs.map((faq, index) => `<details class="faq-item"${index === 0 ? " open" : ""}><summary><h3>${faq.question}</h3></summary><div class="faq-answer"><p>${faq.answer}</p></div></details>`).join("");
 const homeContactUrl = "#consultation";
 const consultationFormHtml = `<section class="section home-cta-section consultation-section" id="consultation" aria-labelledby="consultation-title"><div class="container consultation-shell"><div class="consultation-heading"><p class="cta-kicker">무료 상담 신청</p><h2 id="consultation-title">나에게 맞는 수업,<br>무료 상담으로 시작해보세요.</h2><p>희망하는 수업과 현재 고민을 남겨주시면<br>확인 후 순차적으로 연락드리겠습니다.</p></div><form class="consultation-form-card" method="POST" name="consultation" data-netlify="true" netlify-honeypot="bot-field" action="/" data-consultation-form novalidate><input type="hidden" name="form-name" value="consultation"><input type="hidden" name="bot-field"><input type="hidden" name="sourcePage" value="/"><input type="hidden" name="submittedAt" value=""><div class="form-field"><label for="consultation-phone">연락처 <span class="required-mark" aria-hidden="true">*</span></label><input id="consultation-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required pattern="01[016789]-?[0-9]{3,4}-?[0-9]{4}" placeholder="연락받을 번호를 입력해 주세요" aria-describedby="consultation-phone-error"><p class="form-error" id="consultation-phone-error" data-error-for="phone" aria-live="polite"></p></div><div class="form-field"><label for="consultation-lesson">희망 수업 <span class="required-mark" aria-hidden="true">*</span></label><select id="consultation-lesson" name="lesson" required aria-describedby="consultation-lesson-error"><option value="">희망 수업을 선택해 주세요</option><option value="영어회화">영어회화</option><option value="비즈니스 영어">비즈니스 영어</option><option value="초등 영어">초등 영어</option><option value="중등 영어">중등 영어</option><option value="고등 영어">고등 영어</option><option value="TOEIC">TOEIC</option><option value="TOEIC Speaking">TOEIC Speaking</option><option value="OPIC">OPIC</option><option value="IELTS">IELTS</option><option value="TOEFL">TOEFL</option><option value="일본어회화">일본어회화</option><option value="JLPT">JLPT</option><option value="JPT">JPT</option><option value="기타">기타</option></select><p class="form-error" id="consultation-lesson-error" data-error-for="lesson" aria-live="polite"></p></div><div class="form-field"><label for="consultation-message">문의 내용 <span class="required-mark" aria-hidden="true">*</span></label><textarea id="consultation-message" name="message" required placeholder="현재 고민, 학습 목표, 희망하는 수업 내용을 간단히 적어주세요." aria-describedby="consultation-message-error"></textarea><p class="form-error" id="consultation-message-error" data-error-for="message" aria-live="polite"></p></div><div class="form-field privacy-field"><label class="privacy-label" for="consultation-privacy"><input id="consultation-privacy" name="privacyConsent" type="checkbox" value="동의" required aria-describedby="consultation-privacy-error"><span>상담 진행을 위해 연락처, 희망 수업, 문의 내용을 수집합니다.<br>수집된 정보는 상담 목적으로만 사용되며 내부 정책에 따라 파기됩니다.</span></label><p class="form-error" id="consultation-privacy-error" data-error-for="privacyConsent" aria-live="polite"></p></div><button class="button button-primary consultation-submit" type="submit" data-submit-button>무료 상담 신청하기</button><div class="form-status" data-form-status role="status" aria-live="polite" tabindex="-1"></div></form></div></section>`;
 const homeMain = `<section class="hero home-hero"><div class="container home-hero-layout"><div class="home-hero-copy"><p class="eyebrow">전국 지역별 1:1 맞춤 수업</p><h1 aria-label="기초회화부터 자격증 대비까지! 1:1 맞춤 전문 수업"><span class="hero-title-line">기초회화부터</span><span class="hero-title-line">자격증 대비까지!</span><span class="hero-title-line hero-title-emphasis">1:1 맞춤</span><span class="hero-title-line">전문 수업</span></h1><p class="lead">영어·일본어 기초회화부터 TOEIC, OPIC, IELTS, TOEFL, JLPT까지, 현재 실력과 학습 목표에 맞춰 1:1 맞춤 수업으로 진행합니다.</p><div class="hero-actions"><a class="button" href="#lessons">지역별 수업 찾기</a><a class="button button-secondary" href="${homeContactUrl}">상담 신청하기</a></div></div>${renderPicture({ desktop: heroAssets.desktop, mobile: heroAssets.mobile, className: "image-box-hero", alt: heroAssets.desktop.alt })}</div></section>
 <section class="section home-categories" id="lessons" aria-labelledby="category-title"><div class="container"><div class="section-heading"><p class="section-kicker">수업 종류</p><h2 id="category-title">어떤 수업을 찾고 있나요?</h2><p class="section-intro">배우려는 목적에 가까운 수업부터 확인해 보세요.</p></div><div class="category-grid">${categoryCards}</div></div></section>
-<section class="section home-features" aria-labelledby="feature-title"><div class="container"><div class="section-heading"><p class="section-kicker">수업 특징</p><h2 id="feature-title">학습자에게 필요한 기준부터 확인합니다</h2><p class="section-intro">현재 수준을 정확히 확인하고 목표에 맞는 학습 방향을 체계적으로 설계합니다.</p></div><div class="home-feature-grid"><article class="feature-card">${renderImageBox(featurePersonal, "image-box-feature")}<h3>1:1 맞춤 수업</h3><p>학습자의 현재 수준과 목표에 맞춰 수업을 개별적으로 진행합니다.</p></article><article class="feature-card">${renderImageBox(featurePersonal, "image-box-feature")}<h3>개인별 맞춤 설계</h3><p>회화와 시험 등 목적에 필요한 내용과 학습 순서를 구체적으로 설계합니다.</p></article><article class="feature-card">${renderImageBox(featureNationwide, "image-box-feature")}<h3>20년 이상 전문 강사진</h3><p>오랜 지도 경험을 바탕으로 학습 과정에서 필요한 방향을 분명하게 안내합니다.</p></article><article class="feature-card">${renderImageBox(featureManagement, "image-box-feature")}<h3>체계적인 학습 관리</h3><p>수업 진행과 피드백을 연결해 목표까지의 학습 흐름을 꾸준히 관리합니다.</p></article><article class="feature-card">${renderImageBox(featureLevelTest, "image-box-feature")}<h3>무료 레벨 테스트</h3><p>현재 실력을 점검하고 맞춤 학습 목표와 수업 방향을 함께 설정합니다.</p></article></div></div></section>
+<section class="section home-features" aria-labelledby="feature-title"><div class="container"><div class="section-heading"><p class="section-kicker">수업 특징</p><h2 id="feature-title">사람마다 다른 출발점에서 시작합니다</h2><p class="section-intro">같은 과목이라도 배우는 이유와 어려운 부분은 다릅니다. 현재 실력에 맞게 수업 내용과 연습량을 정합니다.</p></div><div class="home-feature-grid"><article class="feature-card">${renderImageBox(featurePersonal, "image-box-feature")}<h3>1:1 맞춤 수업</h3><p>잘하는 부분은 빠르게 지나가고 막히는 부분에는 충분한 시간을 씁니다.</p></article><article class="feature-card">${renderImageBox(featurePersonal, "image-box-feature")}<h3>개인별 수업 구성</h3><p>회화, 시험, 업무 등 실제로 필요한 장면에 맞춰 배울 내용을 고릅니다.</p></article><article class="feature-card">${renderImageBox(featureNationwide, "image-box-feature")}<h3>20년 이상 전문 강사진</h3><p>오랜 수업 경험을 바탕으로 지금 고쳐야 할 부분을 구체적으로 짚어드립니다.</p></article><article class="feature-card">${renderImageBox(featureManagement, "image-box-feature")}<h3>수업과 복습 관리</h3><p>수업에서 어려웠던 부분을 기록하고 다음 시간에 다시 써보며 익힙니다.</p></article><article class="feature-card">${renderImageBox(featureLevelTest, "image-box-feature")}<h3>무료 레벨 테스트</h3><p>현재 할 수 있는 부분과 보완할 부분을 확인해 첫 수업 내용을 정합니다.</p></article></div></div></section>
 <section class="section section-soft home-process-section" id="process"><div class="container"><div class="section-heading"><p class="section-kicker">수업 진행 과정</p><h2>수업은 네 단계로 진행됩니다</h2><p class="section-intro">상담부터 복습까지 필요한 과정을 차례대로 이어갑니다.</p></div><div class="process-grid"><article class="process-step"><span class="process-number">01</span>${renderImageBox(processLevelTest, "image-box-icon")}<h3>수준과 목표 확인</h3><p>배우려는 이유와 현재 어려움을 먼저 확인합니다.</p></article><article class="process-step"><span class="process-number">02</span>${renderImageBox(processPlan, "image-box-icon")}<h3>개인별 방향 설정</h3><p>목표에 필요한 학습 내용과 순서를 정합니다.</p></article><article class="process-step"><span class="process-number">03</span>${renderImageBox(processLesson, "image-box-icon")}<h3>설명과 실전 연습</h3><p>필요한 내용을 배우고 직접 사용해 봅니다.</p></article><article class="process-step"><span class="process-number">04</span>${renderImageBox(processFeedback, "image-box-icon")}<h3>피드백과 복습</h3><p>어려웠던 부분을 점검하고 다시 연습합니다.</p></article></div></div></section>
-<section class="section section-soft level-test-section" aria-labelledby="level-test-title"><div class="container"><div class="cta cta-layout level-test-cta"><div class="cta-content"><p class="cta-kicker">무료 레벨 테스트</p><h2 id="level-test-title">현재 실력을 확인하고 맞춤 학습 방향을 찾아보세요</h2><p>학습 목적과 어려운 부분을 확인해 시작하기 좋은 수업 방향을 안내합니다.</p><a class="button button-light" href="${homeContactUrl}">무료 레벨 테스트 신청</a></div>${renderImageBox(levelTestCtaImage, "image-box-cta")}</div></div></section>
+<section class="section section-soft level-test-section" aria-labelledby="level-test-title"><div class="container"><div class="cta cta-layout level-test-cta"><div class="cta-content"><p class="cta-kicker">무료 레벨 테스트</p><h2 id="level-test-title">내 실력에서 어떤 수업이 맞는지 궁금하신가요?</h2><p>배우려는 이유와 어려운 부분을 들은 뒤 첫 수업에서 무엇을 배울지 말씀드립니다.</p><a class="button button-light" href="${homeContactUrl}">무료 레벨 테스트 신청</a></div>${renderImageBox(levelTestCtaImage, "image-box-cta")}</div></div></section>
 ${reviewCarouselHtml}
 <section class="section home-faq" id="faq"><div class="container faq-layout"><div class="section-heading"><p class="section-kicker">FAQ</p><h2>수업을 찾기 전에 확인해 보세요</h2><p class="section-intro">자주 궁금해하는 내용을 먼저 정리했습니다.</p></div><div class="faq-list">${homeFaqHtml}</div></div></section>
 ${consultationFormHtml}`;
 const homeHtml = renderTemplate(template, {
   ...brandTemplateValues(null, baseUrl),
   LANG: "ko", TITLE: "맞춤 회화 과외 | 지역별 일대일 수업",
-  DESCRIPTION: "지역과 학습 목표에 맞춘 성인 영어·일본어 회화 과외를 안내합니다.",
+  DESCRIPTION: "현재 실력과 배우는 목적에 맞춘 영어·일본어 1:1 수업을 지역별로 찾아볼 수 있습니다.",
   CANONICAL_URL: escapeHtml(`${baseUrl}/`),
   STRUCTURED_DATA: makeJsonLd({ "@context": "https://schema.org", "@graph": [{ "@type": "WebSite", name: "김선생 회화 과외", url: `${baseUrl}/`, inLanguage: "ko" }, { "@type": "Organization", name: "김선생 회화 과외", url: `${baseUrl}/` }, { "@type": "FAQPage", mainEntity: homeFaqs.map((faq) => ({ "@type": "Question", name: faq.question, acceptedAnswer: { "@type": "Answer", text: faq.answer } })) }] }),
   NAV_LINK: "#lessons", NAV_TEXT: "수업 지역 보기", MAIN: homeMain,

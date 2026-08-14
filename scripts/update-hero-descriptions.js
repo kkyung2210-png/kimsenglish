@@ -34,18 +34,34 @@ function csvCell(value) {
 }
 
 const rows = parseCsv(fs.readFileSync(csvPath, "utf8").replace(/^\uFEFF/, ""));
-const descriptionIndex = rows[0].indexOf("description");
 const slugIndex = rows[0].indexOf("slug");
-if (descriptionIndex === -1 || slugIndex === -1) throw new Error("pages.csv에 slug 또는 description 열이 없습니다.");
+const contentColumns = ["description", "search_intent", "summary", "lesson_focus", "lesson_method", "lesson_result"];
+const columnIndexes = Object.fromEntries(contentColumns.map((name) => [name, rows[0].indexOf(name)]));
+if (slugIndex === -1 || Object.values(columnIndexes).some((index) => index === -1)) {
+  throw new Error("pages.csv에 콘텐츠 갱신에 필요한 열이 없습니다.");
+}
 
-const descriptions = new Map(loadPages().pages.map((page) => [page.slug, page.description]));
+const generatedContent = new Map(loadPages().pages.map((page) => [page.slug, {
+  description: page.description,
+  search_intent: page.content.intent,
+  summary: `핵심 고민: ${page.content.concern}`,
+  lesson_focus: page.content.focus,
+  lesson_method: page.content.method,
+  lesson_result: page.content.result,
+}]));
 let updated = 0;
 for (const row of rows.slice(1)) {
-  const description = descriptions.get(row[slugIndex]);
-  if (!description || row[descriptionIndex] === description) continue;
-  row[descriptionIndex] = description;
-  updated += 1;
+  const content = generatedContent.get(row[slugIndex]);
+  if (!content) continue;
+  let rowChanged = false;
+  for (const [name, value] of Object.entries(content)) {
+    const index = columnIndexes[name];
+    if (row[index] === value) continue;
+    row[index] = value;
+    rowChanged = true;
+  }
+  if (rowChanged) updated += 1;
 }
 
 fs.writeFileSync(csvPath, `${rows.map((row) => row.map(csvCell).join(",")).join("\n")}\n`, "utf8");
-console.log(`${updated}개 지역 페이지의 Hero 설명을 갱신했습니다.`);
+console.log(`${updated}개 지역 페이지의 공통 콘텐츠를 갱신했습니다.`);

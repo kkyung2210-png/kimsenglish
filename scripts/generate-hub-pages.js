@@ -80,21 +80,21 @@ function hubCopy(type, hub) {
     },
     region: {
       title: `${label} 회화·시험 과외 모음 | Kim's English`,
-      description: `${hub.province} ${label}에서 찾을 수 있는 회화, 시험 대비와 대상별 맞춤 수업을 과목과 학습 목적에 따라 안내합니다.`,
+      description: `${hub.province} ${label}의 영어회화, 일본어, 시험 대비 수업을 과목과 수강 대상별로 살펴볼 수 있습니다.`,
       heading: `${label}에서 찾을 수 있는 맞춤 수업`,
       intro: `${hub.province} ${label}의 영어회화, 일본어와 시험 대비 수업을 과목과 대상별로 살펴볼 수 있습니다.`,
     },
     subject: {
       title: `${label} 지역별 맞춤 수업 안내 | Kim's English`,
-      description: `${label} 수업을 찾는 학습자를 위해 지역별 안내, 추천 대상과 관련 과목을 한곳에 정리했습니다.`,
+      description: `${label} 수업을 지역과 수강 대상별로 비교하고 원하는 과목 페이지를 바로 찾을 수 있습니다.`,
       heading: `${label} 수업을 지역과 대상별로 찾아보세요`,
       intro: `${label} 학습 목적과 현재 수준에 맞는 페이지를 지역과 대상 기준으로 비교할 수 있습니다.`,
     },
     target: {
       title: `${label} 회화·시험 맞춤 수업 안내 | Kim's English`,
-      description: `${label} 학습자에게 맞는 영어회화, 일본어와 시험 대비 수업을 지역과 과목별로 정리했습니다.`,
-      heading: `${label} 학습자를 위한 맞춤 수업`,
-      intro: `${label} 학습자가 회화, 시험과 업무 등 자신의 목적에 가까운 수업을 지역별로 확인할 수 있습니다.`,
+      description: `${label} 영어회화, 일본어와 시험 대비 수업을 지역과 과목별로 비교할 수 있습니다.`,
+      heading: `${label} 맞춤 수업`,
+      intro: `${label} 수업을 회화, 시험, 업무 등 배우는 목적에 따라 지역별로 찾아볼 수 있습니다.`,
     },
   };
   return { label, ...copies[type] };

@@ -29,16 +29,16 @@ const APP = Object.freeze({
   }),
 });
 
-// description은 slug에 따라 아래 8개 문장 조합 중 하나를 고정 선택합니다.
+// description은 slug에 따라 서로 다른 상담형 문장 조합을 고정 선택합니다.
 const DESCRIPTION_PATTERNS = Object.freeze([
-  function (c) { return c.who + ' ' + c.concern + ' ' + c.focus; },
-  function (c) { return c.who + ' ' + c.intent + ' ' + c.method; },
-  function (c) { return c.who + ' ' + c.focus + ' ' + c.result; },
-  function (c) { return c.who + ' ' + c.concern + ' ' + c.method; },
-  function (c) { return c.who + ' ' + c.intent + ' ' + c.result; },
-  function (c) { return c.who + ' ' + c.method + ' ' + c.focus; },
-  function (c) { return c.who + ' ' + c.result + ' ' + c.concern; },
-  function (c) { return c.who + ' ' + c.focus + ' ' + c.intent; },
+  function (c) { return c.region + '에서 ' + c.lesson + ' 수업을 찾고 계신다면 지금 필요한 내용부터 시작할 수 있습니다. ' + c.practice; },
+  function (c) { return c.lesson + ' 공부를 처음 시작한다면 ' + c.region + '에서도 기초부터 1:1로 배울 수 있습니다. ' + c.practice; },
+  function (c) { return c.region + ' ' + c.lesson + ' 수업은 정해진 진도보다 현재 실력과 배우는 이유를 중요하게 봅니다. ' + c.practice; },
+  function (c) { return c.region + '에서 ' + c.lesson + ' 실력을 늘리고 싶다면 자주 막히는 부분부터 직접 다뤄봅니다. ' + c.practice; },
+  function (c) { return c.lesson + ' 공부를 다시 시작하려는 분께 ' + c.region + ' 1:1 수업이 맞는 출발점을 찾아드립니다. ' + c.practice; },
+  function (c) { return c.region + ' ' + c.lesson + ' 수업을 고민 중이라면 잘하는 부분과 보완할 부분을 나누어 시작합니다. ' + c.practice; },
+  function (c) { return c.region + '에서 배우는 ' + c.lesson + ', 실제로 쓰려는 상황에 맞춰 수업 내용을 정합니다. ' + c.practice; },
+  function (c) { return c.lesson + ' 때문에 고민이 있다면 ' + c.region + ' 수업에서 지금 필요한 연습부터 함께 해볼 수 있습니다. ' + c.practice; },
 ]);
 
 const ALLOWED_TEMPLATES = Object.freeze(['conversation', 'exam', 'business', 'travel']);
@@ -198,35 +198,19 @@ function appendRow_(output, keywordKeys, slugKeys, rule, region, target, detail)
 
 /** details의 검색의도와 핵심고민을 합쳐 페이지 첫 답변으로 사용합니다. */
 function makeSummary_(province, region, target, detail) {
-  const service = [detail.name, detail.suffix].filter(Boolean).join(' ');
-  const audience = [province, region, target, service].filter(Boolean).join(' ');
-  return audience + ' 수업을 찾는 분을 위한 안내입니다. ' +
-    '검색 목적은 “' + shortPhrase_(detail.searchIntent, 45) + '”이며, ' +
-    '핵심 고민은 “' + shortPhrase_(detail.concern, 45) + '”입니다.';
+  return '핵심 고민은 “' + shortPhrase_(detail.concern, 60) + '”입니다.';
 }
 
 /** 8개 패턴 중 slug가 지정하는 하나를 골라 80~150자 description을 만듭니다. */
 function makeDescription_(slug, province, region, target, detail) {
   const service = [detail.name, detail.suffix].filter(Boolean).join(' ');
-  const location = [province, region].filter(Boolean).join(' ');
-  const toneStyle = toneStyle_(detail.tone);
   const context = {
-    who: [location + '에서', target, service, '수업을 찾는 분을 위한', toneStyle, '안내입니다.']
-      .filter(Boolean).join(' '),
-    intent: labeledSentence_('검색 목적은', detail.searchIntent),
-    concern: labeledSentence_('핵심 고민은', detail.concern),
-    focus: labeledSentence_('수업 초점은', detail.lessonFocus),
-    method: labeledSentence_('진행 방식은', detail.lessonMethod),
-    result: labeledSentence_('기대 변화는', detail.lessonResult),
+    region: region,
+    lesson: [target, service].filter(Boolean).join(' '),
+    practice: shortPhrase_(detail.lessonMethod, 62) + ' 방식으로 수업하고 있습니다.',
   };
-  // 본문템플릿도 선택값에 포함해 같은 slug와 template은 항상 같은 결과를 냅니다.
   const patternIndex = stableHash_(slug + '|' + detail.bodyTemplate) % DESCRIPTION_PATTERNS.length;
-  return fitDescription_(DESCRIPTION_PATTERNS[patternIndex](context), context.who, context.focus);
-}
-
-/** description 재료를 짧은 인용 문장으로 바꿔 조사가 어색하게 붙는 일을 막습니다. */
-function labeledSentence_(label, value) {
-  return label + ' “' + shortPhrase_(value, 32) + '”입니다.';
+  return DESCRIPTION_PATTERNS[patternIndex](context);
 }
 
 /** 긴 셀은 단어 경계에서 줄여 description이 지나치게 길어지지 않게 합니다. */
@@ -238,41 +222,6 @@ function shortPhrase_(value, maximumLength) {
   return (lastSpace > maximumLength * 0.55 ? sliced.slice(0, lastSpace) : clean.slice(0, maximumLength)) + '…';
 }
 
-/** 완성 문장을 보존하면서 description 길이를 80~150자로 맞춥니다. */
-function fitDescription_(text, whoSentence, focusSentence) {
-  let result = clean_(text).replace(/\s+/g, ' ');
-  if (result.length > 150) {
-    const sentences = result.match(/[^.!?。]+[.!?。]/g) || [result];
-    result = '';
-    sentences.forEach(function (sentence) {
-      const candidate = (result + ' ' + clean_(sentence)).trim();
-      if (candidate.length <= 150) result = candidate;
-    });
-  }
-  if (result.length < 80) {
-    result = (result + ' ' + focusSentence).trim();
-  }
-  if (result.length < 80) {
-    result += ' 현재 수준을 확인한 뒤 필요한 내용을 순서대로 안내합니다.';
-  }
-  if (result.length > 150) {
-    result = (whoSentence + ' ' + focusSentence).trim();
-  }
-  return result;
-}
-
-/** 톤 이름을 첫 문장의 자연스러운 표현으로 바꿉니다. */
-function toneStyle_(tone) {
-  const styles = {
-    '친근형': '편안한',
-    '신뢰형': '차분하고 분명한',
-    '전문형': '체계적인',
-    '목표달성형': '목표 중심',
-    '차분형': '차분한',
-    '코칭형': '함께 점검하는',
-  };
-  return styles[tone] || '차분한';
-}
 
 /** 문자열을 빠르게 숫자로 바꿔 slug별 패턴 번호를 고정합니다. */
 function stableHash_(value) {
