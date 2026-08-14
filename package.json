@@ -26,7 +26,8 @@
     "preview": "node preview-server.js",
     "validate:content": "node scripts/validate-content-intelligence.js",
     "update:hero-copy": "node scripts/update-hero-descriptions.js",
-    "update:content-copy": "node scripts/update-hero-descriptions.js"
+    "update:content-copy": "node scripts/update-hero-descriptions.js",
+    "validate:pages-csv": "node scripts/validate-pages-csv.js"
   },
   "devDependencies": {
     "eslint": "^9.32.0"
