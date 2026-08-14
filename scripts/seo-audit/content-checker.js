@@ -97,7 +97,6 @@ function checkContent(document, searchItem, config) {
   if (rules.cta && !document.hasCta) problems.push(issue("ERROR", "contentQuality", "cta-missing", "CTA 영역이 없습니다."));
   if (rules.faq && document.faqQuestions.length < minimumFaq) problems.push(issue("WARNING", "contentQuality", "faq-too-few", `FAQ가 ${minimumFaq}개보다 적습니다.`, { count: document.faqQuestions.length }));
   if (rules.aiSummary && !document.hasAiSummary) problems.push(issue("WARNING", "contentQuality", "ai-summary-missing", "AI Summary 영역이 없습니다."));
-  if (rules.keyTakeaways && !document.hasKeyTakeaways) problems.push(issue("WARNING", "contentQuality", "key-takeaways-missing", "Key Takeaways 영역이 없습니다."));
   if (rules.recommendedAudience && !document.hasRecommendedAudience) problems.push(issue("WARNING", "contentQuality", "recommended-audience-missing", "추천 대상 영역이 없습니다."));
   if (rules.relatedSection && !document.hasRelatedSection) problems.push(issue("WARNING", "internalLinks", "related-section-missing", "관련 페이지 영역이 없습니다."));
   return problems;

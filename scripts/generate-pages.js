@@ -460,17 +460,6 @@ function examplesHtml(page, context) {
   return `<section class="section content-examples" aria-labelledby="content-examples-title"><div class="container"><div class="section-heading"><p class="section-kicker">수업 활용 예시</p><h2 id="content-examples-title">${escapeHtml(page.region)} ${escapeHtml(context.service)} 수업에서는 무엇을 연습하나요?</h2><p class="section-intro">학습 목적과 주제에 맞춰 실제로 적용할 수 있는 장면을 선택합니다.</p></div><div class="management-grid">${examples}</div></div></section>`;
 }
 
-function keyTakeawaysHtml(page, context) {
-  const takeaways = [
-    `${page.region}에서 ${page.target || "학습자"}에게 맞는 ${context.service} 수업을 안내합니다.`,
-    `현재 어려움은 “${shortPhrase(context.concern, 54)}”인지 먼저 확인합니다.`,
-    `수업은 ${shortPhrase(context.focus, 58)} 내용을 중심으로 구성합니다.`,
-    `${shortPhrase(context.method, 64)} 방식으로 진행합니다.`,
-    `목표는 ${shortPhrase(context.result, 58)} 변화입니다.`,
-  ];
-  return `<section class="section key-takeaways-section" aria-labelledby="key-takeaways-title"><div class="container"><div class="section-heading"><p class="section-kicker">Key Takeaways</p><h2 id="key-takeaways-title">${escapeHtml(page.region)} ${escapeHtml(context.service)} 핵심 요약</h2><p class="section-intro">이 페이지에서 확인할 내용을 다섯 가지로 정리했습니다.</p></div><ul class="key-takeaways">${takeaways.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div></section>`;
-}
-
 function pickRepresentative(pages, predicate) {
   return pages.find(predicate) || pages[0];
 }
@@ -559,7 +548,6 @@ for (const [index, page] of selectedPages.entries()) {
   const faqs = makeFaqs(page, context);
   const faqHtml = faqs.map((faq, faqIndex) => `<details class="faq-item"${faqIndex === 0 ? " open" : ""}><summary><h3>${escapeHtml(faq.question)}</h3></summary><div class="faq-answer"><p>${escapeHtml(faq.answer)}</p></div></details>`).join("");
   const aiSummary = aiSummaryHtml(page, context);
-  const keyTakeaways = keyTakeawaysHtml(page, context);
   const lessonExamples = examplesHtml(page, context);
   const canonicalUrl = `${baseUrl}/${page.slug}/`;
   const directAnswer = page.intelligence.intro;
@@ -585,7 +573,6 @@ for (const [index, page] of selectedPages.entries()) {
   <section class="section section-soft" id="fit"><div class="container"><div class="section-heading"><p class="section-kicker">추천 대상</p><h2>${escapeHtml(page.region)} ${escapeHtml(context.service)}, 이런 분께 추천합니다</h2></div><ul class="fit-list"><li>${escapeHtml(context.intent)}</li><li>${escapeHtml(context.concern)}</li><li>${escapeHtml(context.focus)} 내용이 필요한 분</li><li>${escapeHtml(context.result)} 변화를 원하는 분</li></ul></div></section>
   <section class="section section-soft" id="faq"><div class="container"><div class="section-heading"><p class="section-kicker">자주 묻는 질문</p><h2>${escapeHtml(page.region)} ${escapeHtml(context.service)} 수업 전 자주 묻는 질문</h2></div><div class="faq-list">${faqHtml}</div>${page.updated_at ? `<p class="updated">마지막 내용 확인: ${escapeHtml(page.updated_at)}</p>` : ""}</div></section>
   <section class="section" id="consultation"><div class="container"><div class="cta"><h2>${escapeHtml(firstValue(page, "cta_title") || page.intelligence.cta.title)}</h2><p>${escapeHtml(firstValue(page, "cta_text") || page.intelligence.cta.text)}</p><a class="button" href="${contactUrl}">${escapeHtml(page.intelligence.cta.label)}</a></div></div></section>
-  ${keyTakeaways}
   `;
   const html = renderTemplate(template, {
     ...brandTemplateValues(page, baseUrl),

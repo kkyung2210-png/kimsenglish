@@ -24,8 +24,8 @@
   },
   "strictMode": { "failOnError": true, "maximumErrors": 0, "minimumAverageScore": 70 },
   "pageRules": {
-    "regular": { "breadcrumb": true, "faq": true, "cta": true, "aiSummary": true, "keyTakeaways": true, "recommendedAudience": true, "relatedSection": true },
-    "hub": { "breadcrumb": true, "faq": true, "cta": true, "aiSummary": false, "keyTakeaways": false, "recommendedAudience": false, "relatedSection": false },
-    "home": { "breadcrumb": false, "faq": true, "cta": true, "aiSummary": false, "keyTakeaways": false, "recommendedAudience": false, "relatedSection": false }
+    "regular": { "breadcrumb": true, "faq": true, "cta": true, "aiSummary": true, "recommendedAudience": true, "relatedSection": true },
+    "hub": { "breadcrumb": true, "faq": true, "cta": true, "aiSummary": false, "recommendedAudience": false, "relatedSection": false },
+    "home": { "breadcrumb": false, "faq": true, "cta": true, "aiSummary": false, "recommendedAudience": false, "relatedSection": false }
   }
 }

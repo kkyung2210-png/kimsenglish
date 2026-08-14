@@ -89,7 +89,6 @@ function parseDocument(filePath, distPath) {
     viewport: metaContent(html, "viewport"), hasBreadcrumb: /class="[^"]*breadcrumb[^"]*"/i.test(html),
     hasCta: /class="[^"]*(?:cta|mid-cta)[^"]*"/i.test(html) || /id="consultation"/i.test(html),
     hasFaq: faqQuestions.length > 0, hasAiSummary: /ai-summary-section|AI Summary/i.test(html),
-    hasKeyTakeaways: /key-takeaways-section|Key Takeaways/i.test(html),
     hasRecommendedAudience: /id="fit"|이런 분께 추천/i.test(html),
     hasRelatedSection: /id="related"|internal-links-section/i.test(html),
     introduction: stripTags(aiSummaryBlock).slice(0, 500),
