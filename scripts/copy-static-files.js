@@ -45,9 +45,10 @@ function copyStaticFiles({ root, outputPath, pages, hubPages = [], baseUrl }) {
   const styleFile = path.join(root, "assets", "style.css");
   const consultationScript = path.join(publicRoot, "utils", "consultation-form.js");
   const reviewsScript = path.join(publicRoot, "utils", "reviews-carousel.js");
+  const lessonRegionScript = path.join(publicRoot, "utils", "lesson-region-modal.js");
   const images = path.join(publicRoot, "images");
 
-  for (const requiredFile of [styleFile, consultationScript, reviewsScript]) {
+  for (const requiredFile of [styleFile, consultationScript, reviewsScript, lessonRegionScript]) {
     if (!fs.existsSync(requiredFile)) throw new Error(`필요한 정적 파일을 찾을 수 없습니다: ${requiredFile}`);
   }
 
@@ -55,6 +56,7 @@ function copyStaticFiles({ root, outputPath, pages, hubPages = [], baseUrl }) {
   fs.mkdirSync(path.join(outputPath, "utils"), { recursive: true });
   copyIfChanged(consultationScript, path.join(outputPath, "utils", "consultation-form.js"));
   copyIfChanged(reviewsScript, path.join(outputPath, "utils", "reviews-carousel.js"));
+  copyIfChanged(lessonRegionScript, path.join(outputPath, "utils", "lesson-region-modal.js"));
 
   if (fs.existsSync(images)) {
     fs.cpSync(images, path.join(outputPath, "images"), {
