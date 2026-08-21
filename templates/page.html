@@ -31,6 +31,7 @@
         <a class="nav-optional" href="#faq">자주 묻는 질문</a>
         <a class="nav-cta" href="/#consultation">상담 신청</a>
         <a class="nav-phone" href="tel:01025686630" aria-label="전화상담 010-2568-6630"><span aria-hidden="true">📞</span><span>전화상담</span></a>
+        <a class="nav-kakao" href="https://open.kakao.com/o/strVhSJi" target="_blank" rel="noopener noreferrer" aria-label="카카오톡 상담 새 창에서 열기"><span aria-hidden="true">💬</span><span>카카오톡 상담</span></a>
       </nav>
     </div>
   </header>
@@ -42,12 +43,13 @@
       <a class="footer-logo" href="/">{{BRAND_LOGO_FULL}}<span>{{BRAND_NAME}}</span></a>
       <p class="footer-services">영어 · 일본어 · TOEIC · OPIC · IELTS</p>
       <a class="footer-main-phone" href="tel:01025686630" aria-label="상담문의 010-2568-6630"><span>📞 상담문의</span><strong>010-2568-6630</strong></a>
+      <a class="footer-kakao" href="https://open.kakao.com/o/strVhSJi" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">💬</span> 카카오톡 오픈채팅</a>
       <p>전국 1:1 맞춤 수업</p>
       <p class="footer-copyright">© 2026 Kim's English</p>
       <nav class="footer-legal" aria-label="법적 안내"><a id="privacy-policy" href="/#privacy-policy">개인정보처리방침</a><a id="terms" href="/#terms">이용약관</a></nav>
     </div>
   </footer>
-  <a class="mobile-consult" href="{{MOBILE_CONTACT_URL}}" aria-label="상담 신청하기">상담 신청하기</a>
+  <nav class="mobile-contact-bar" aria-label="빠른 상담 메뉴"><a class="mobile-quick-contact mobile-phone" href="tel:01025686630" aria-label="전화 상담"><span aria-hidden="true">📞</span><span>전화</span></a><a class="mobile-quick-contact mobile-kakao" href="https://open.kakao.com/o/strVhSJi" target="_blank" rel="noopener noreferrer" aria-label="카카오톡 상담 새 창에서 열기"><span aria-hidden="true">💬</span><span>카카오톡</span></a><a class="mobile-consult" href="{{MOBILE_CONTACT_URL}}" aria-label="상담 신청하기">상담 신청</a></nav>
   <script src="/utils/consultation-form.js" defer></script>
   <script src="/utils/reviews-carousel.js" defer></script>
   <script src="/utils/lesson-region-modal.js" defer></script>
@@ -76,7 +78,7 @@
       if (heroActions) {
         const phoneCta = document.createElement("div");
         phoneCta.className = "hero-phone-cta";
-        phoneCta.innerHTML = '<span>📞 빠른 전화 상담</span><a href="tel:01025686630">010-2568-6630</a>';
+        phoneCta.innerHTML = '<a class="hero-phone-link" href="tel:01025686630"><span>📞 빠른 전화 상담</span><strong>010-2568-6630</strong></a><a class="hero-kakao-link" href="https://open.kakao.com/o/strVhSJi" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">💬</span><strong>카카오톡 상담</strong></a>';
         heroActions.after(phoneCta);
       }
 
@@ -116,18 +118,11 @@
       if (consultationSection) {
         const consultationHeading = consultationSection.querySelector(".consultation-heading");
         if (consultationHeading) {
-          const phoneGuide = document.createElement("p");
-          phoneGuide.className = "consultation-phone-guide";
-          phoneGuide.innerHTML = '전화 상담을 원하시면<br><a href="tel:01025686630">010-2568-6630</a>으로 바로 연락주세요.';
-          consultationHeading.append(phoneGuide);
+          const contactGuide = document.createElement("div");
+          contactGuide.className = "consultation-contact-guide";
+          contactGuide.innerHTML = '<p>원하는 방식으로 바로 문의할 수 있습니다.</p><div><a href="tel:01025686630">📞 010-2568-6630</a><a class="consultation-kakao" href="https://open.kakao.com/o/strVhSJi" target="_blank" rel="noopener noreferrer">💬 카카오톡으로 바로 문의하기</a></div>';
+          consultationHeading.append(contactGuide);
         }
-      }
-
-      const floatingCta = document.querySelector(".mobile-consult");
-      if (floatingCta) {
-        floatingCta.classList.add("floating-cta");
-        floatingCta.textContent = "무료 상담 신청";
-        floatingCta.setAttribute("aria-label", "무료 상담 신청");
       }
 
       const revealTargets = [...document.querySelectorAll("main > .section")];
