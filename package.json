@@ -24,6 +24,7 @@
     "test:consultation-email": "node scripts/test-consultation-email.js",
     "lint": "eslint public/utils/consultation-form.js public/utils/lesson-region-modal.js netlify/functions/consultation-email.js scripts/test-consultation-email.js scripts/test-lesson-region-modal.js",
     "test:lesson-region-modal": "node scripts/test-lesson-region-modal.js",
+    "test:content-relevance": "node scripts/test-content-relevance.js",
     "preview": "node preview-server.js",
     "validate:content": "node scripts/validate-content-intelligence.js",
     "update:hero-copy": "node scripts/update-hero-descriptions.js",

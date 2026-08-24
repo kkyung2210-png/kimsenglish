@@ -60,25 +60,18 @@
 
       const heroCopy = document.querySelector(".home-hero-copy");
       const heroActions = heroCopy && heroCopy.querySelector(".hero-actions");
-      const regionButton = heroActions && heroActions.querySelector('a[href="#lessons"]');
-      const contactButton = heroActions && [...heroActions.querySelectorAll("a")].find((link) => link !== regionButton);
-      if (heroActions && regionButton && contactButton) {
+      if (heroActions) {
         const trust = document.createElement("ul");
         trust.className = "hero-trust";
         trust.setAttribute("aria-label", "수업 신뢰 요소");
         trust.innerHTML = "<li>실시간 1:1 화상수업</li><li>무료 테스트 수업</li><li>개인별 맞춤 설계</li><li>다년 경력 전문 강사진</li>";
         heroActions.before(trust);
-        contactButton.className = "button button-primary";
-        contactButton.textContent = "1:1 화상수업 상담받기";
-        regionButton.className = "button button-outline";
-        regionButton.textContent = "지역별 수업 보기";
-        heroActions.replaceChildren(contactButton, regionButton);
       }
 
       if (heroActions) {
         const phoneCta = document.createElement("div");
         phoneCta.className = "hero-phone-cta";
-        phoneCta.innerHTML = '<a class="hero-phone-link" href="tel:01025686630"><span>📞 빠른 전화 상담</span><strong>010-2568-6630</strong></a><a class="hero-kakao-link" href="https://open.kakao.com/o/strVhSJi" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">💬</span><strong>카카오톡 상담</strong></a>';
+        phoneCta.innerHTML = '<a class="hero-phone-link" href="tel:01025686630"><span>📞 전화로 문의하기</span><strong>010-2568-6630</strong></a>';
         heroActions.after(phoneCta);
       }
 
@@ -117,14 +110,10 @@
       const consultationSection = document.querySelector(".home-cta-section");
       if (consultationSection) {
         const consultationHeading = consultationSection.querySelector(".consultation-heading");
-        if (consultationHeading) {
-          const consultationKicker = consultationHeading.querySelector(".cta-kicker");
-          const consultationIntro = consultationHeading.querySelector("p:not(.cta-kicker)");
-          if (consultationKicker) consultationKicker.textContent = "1:1 화상수업 상담";
-          if (consultationIntro) consultationIntro.innerHTML = "희망 과목과 현재 고민을 남겨주시면<br>실시간 1:1 화상수업 방향을 확인해 연락드리겠습니다.";
+        if (consultationHeading && !consultationHeading.querySelector(".consultation-contact-guide")) {
           const contactGuide = document.createElement("div");
           contactGuide.className = "consultation-contact-guide";
-          contactGuide.innerHTML = '<p>실시간 1:1 화상수업이 궁금하다면 원하는 방식으로 바로 문의해 주세요.</p><div><a href="tel:01025686630">📞 전화로 수업 문의</a><a class="consultation-kakao" href="https://open.kakao.com/o/strVhSJi" target="_blank" rel="noopener noreferrer">💬 카톡으로 수업 문의</a></div>';
+          contactGuide.innerHTML = '<p>폼 작성 전 카카오톡으로 먼저 물어보셔도 됩니다.</p><div><a class="consultation-kakao" href="https://open.kakao.com/o/strVhSJi" target="_blank" rel="noopener noreferrer">💬 카톡으로 먼저 문의하기</a><a href="tel:01025686630">📞 전화로 문의하기</a></div>';
           consultationHeading.append(contactGuide);
         }
       }

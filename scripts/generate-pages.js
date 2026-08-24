@@ -2,7 +2,7 @@
 const fs = require("fs");
 const path = require("path");
 const { makeJsonLd, makePageSchema } = require("./generate-schema");
-const { createPageContent } = require("./content-intelligence");
+const { classifyTopic, createPageContent } = require("./content-intelligence");
 const brandAssets = require("../config/brand-assets");
 const reviews = require("../config/reviews");
 const { SITE_URL } = require("../config/site");
@@ -299,16 +299,59 @@ function humanizeSourcePhrase(value) {
     .trim();
 }
 
+// 잘못 연결된 CSV 콘텐츠가 다른 언어·시험 페이지에 노출되지 않도록 과목별 안전 문장을 둡니다.
+const CONTENT_PROFILES = Object.freeze({
+  english: ["일상에서 영어로 자연스럽게 말하기", "알고 있는 표현도 대화에서 바로 나오지 않음", "듣기와 말하기를 연결하는 실전 대화", "현재 수준을 확인한 뒤 상황별 표현을 반복해서 말하기", "익숙한 주제에 자신의 문장으로 답하기"],
+  japanese: ["여행과 일상에서 일본어로 소통하기", "문법은 알아도 실제 대화에서 바로 말하기 어려움", "자주 쓰는 일본어 문형과 상황별 응답", "짧은 문장부터 확장하며 발음과 표현을 점검하기", "기본적인 일상 대화를 자신의 말로 이어가기"],
+  business: ["업무 상황에 필요한 영어 표현 익히기", "회의와 이메일에서 알맞은 표현을 고르기 어려움", "회의, 보고, 전화, 이메일에 필요한 표현", "실제 업무 장면을 정해 역할 연습과 문장 교정하기", "업무 상황에 맞는 표현을 정확하게 사용하기"],
+  travel: ["여행 중 필요한 영어 표현 익히기", "예상하지 못한 상황에서 질문과 요청을 바로 말하기 어려움", "공항, 숙소, 식당, 이동 상황의 필수 표현", "여행 장면별 짧은 대화를 반복해서 연습하기", "여행지에서 필요한 질문과 요청을 직접 말하기"],
+  exam: ["목표 시험에 필요한 영역을 순서대로 준비하기", "문제를 풀어도 같은 유형에서 실수가 반복됨", "영역별 약점 확인과 시간 관리", "진단, 개념 정리, 문제 풀이, 오답 점검", "제한 시간 안에 정답 근거를 찾아 문제 풀기"],
+});
+
+function profileKey(topic) {
+  if (["toeic-speaking", "toeic", "opic", "ielts", "toefl", "teps", "jlpt", "jpt", "exam"].includes(topic)) return "exam";
+  return CONTENT_PROFILES[topic] ? topic : "english";
+}
+
+/** 현재 과목 표지가 없거나 다른 과목명이 들어간 콘텐츠 묶음만 안전한 공통 문장으로 교체합니다. */
+function hasCrossTopicContent(page, topic) {
+  const source = [page.searchIntent, page.summary, page.lessonFocus, page.lessonMethod, page.lessonResult].join(" ").toLowerCase();
+  const examNames = ["toeic", "토익", "opic", "오픽", "ielts", "아이엘츠", "toefl", "토플", "teps", "텝스", "jlpt", "jpt"];
+  const ownExamNames = {
+    "toeic-speaking": ["toeic speaking", "toeic", "토익스피킹", "토익 스피킹", "토익"], toeic: ["toeic", "토익"],
+    opic: ["opic", "오픽"], ielts: ["ielts", "아이엘츠"], toefl: ["toefl", "토플"],
+    teps: ["teps", "텝스"], jlpt: ["jlpt"], jpt: ["jpt"],
+  };
+  const foreignExam = examNames.some((name) => source.includes(name)) &&
+    !(ownExamNames[topic] || []).some((name) => source.includes(name));
+  if (foreignExam) return true;
+  if (topic === "japanese") return /영어|english|비즈니스|business/.test(source) || !/일본어|japanese/.test(source);
+  if (topic === "english") return /일본어|japanese/.test(source) || !/영어|english/.test(source);
+  if (topic === "business") return /일본어|japanese/.test(source) || !/업무|비즈니스|business|회의|이메일/.test(source);
+  if (topic === "travel") return /일본어|japanese/.test(source) || !/여행|travel|공항|숙소/.test(source);
+  if (ownExamNames[topic]) return !/(시험|점수|문제|영역|유형|자격)/.test(source) &&
+    !ownExamNames[topic].some((name) => source.includes(name));
+  return false;
+}
+
 function makeContentContext(page) {
   const service = `${page.detailKeyword}${page.suffix ? ` ${page.suffix}` : ""}`;
   const audience = page.target || "수강생";
   const location = [page.province, page.region].filter(Boolean).join(" ");
-  const intent = humanizeSourcePhrase(page.searchIntent || `${location}에서 ${service} 수업을 찾는 분`);
-  const summarizedConcern = String(page.summary || "").match(/핵심 고민(?:은 [“\"]|:\s*)([^”\"]+?)(?:[”\"]|$)/);
-  const concern = humanizeSourcePhrase(summarizedConcern?.[1] || `${service}를 공부해도 필요한 순간에 바로 활용하기 어려움`);
-  const focus = humanizeSourcePhrase(page.lessonFocus || `${service}의 기초와 실제 활용`);
-  const method = humanizeSourcePhrase(page.lessonMethod || "현재 실력에 맞춰 설명하고 직접 연습한 뒤 다시 복습합니다.");
-  const result = humanizeSourcePhrase(page.lessonResult || "배운 내용을 필요한 상황에서 자신의 말과 풀이로 활용합니다.");
+  const topic = classifyTopic(page);
+  const profile = CONTENT_PROFILES[profileKey(topic)];
+  const useProfile = hasCrossTopicContent(page, topic);
+  const searchIntent = useProfile ? profile[0] : page.searchIntent;
+  const summary = useProfile ? profile[1] : page.summary;
+  const lessonFocus = useProfile ? profile[2] : page.lessonFocus;
+  const lessonMethod = useProfile ? profile[3] : page.lessonMethod;
+  const lessonResult = useProfile ? profile[4] : page.lessonResult;
+  const intent = humanizeSourcePhrase(searchIntent || `${location}에서 ${service} 수업을 찾는 분`);
+  const summarizedConcern = String(summary || "").match(/핵심 고민(?:은 [“\"]|:\s*)([^”\"]+?)(?:[”\"]|$)/);
+  const concern = humanizeSourcePhrase(summarizedConcern?.[1] || summary || `${service}를 공부해도 필요한 순간에 바로 활용하기 어려움`);
+  const focus = humanizeSourcePhrase(lessonFocus || `${service}의 기초와 실제 활용`);
+  const method = humanizeSourcePhrase(lessonMethod || "현재 실력에 맞춰 설명하고 직접 연습한 뒤 다시 복습합니다.");
+  const result = humanizeSourcePhrase(lessonResult || "배운 내용을 필요한 상황에서 자신의 말과 풀이로 활용합니다.");
   return {
     province: page.province,
     city: page.region,
@@ -537,7 +580,7 @@ const classComparisonRows = [
 ];
 const classComparisonRowsHtml = classComparisonRows.map(([label, group, personal]) => `<div class="class-comparison-row" role="row"><h3 class="class-comparison-label" role="rowheader">${label}</h3><div class="class-comparison-cell class-comparison-general" role="cell"><span class="comparison-mobile-label">일반 그룹수업</span><p>${group}</p></div><div class="class-comparison-cell class-comparison-personal" role="cell"><span class="comparison-mobile-label">✓ Kim's English 1:1</span><p>${personal}</p></div></div>`).join("");
 const classComparisonHtml = `<section class="section class-comparison-section section-soft" aria-labelledby="class-comparison-title"><div class="container"><div class="section-heading class-comparison-heading"><p class="section-kicker">WHY 1:1?</p><h2 id="class-comparison-title">수업의 기준이 '전체'가 아니라 '나'입니다.</h2><p class="section-intro">여러 명에게 맞춘 진도가 아닌,<br>현재 실력과 목표에 맞춰 진행하는 1:1 수업입니다.</p></div><div class="class-comparison-table" role="table" aria-label="일반 그룹수업과 Kim's English 1:1 수업 비교"><div class="class-comparison-header" role="row"><span role="columnheader">비교 항목</span><span role="columnheader">일반적인 그룹 수업</span><span class="class-comparison-kim-header" role="columnheader"><b>1:1 맞춤</b> Kim's English 1:1 수업</span></div>${classComparisonRowsHtml}</div><aside class="class-comparison-summary"><div><p class="section-kicker">한 사람을 위한 수업</p><h3>남들과 같은 진도를 따라갈 필요 없습니다.</h3><p>기초가 부족하면 기초부터,<br>회화가 필요하면 말하기 중심으로,<br>시험이 목표라면 필요한 영역에 집중합니다.<br>처음부터 끝까지 한 사람을 기준으로 수업합니다.</p></div><div class="class-comparison-actions"><a class="button" href="#consultation">무료 테스트 수업</a><a class="button button-secondary" href="tel:01025686630" aria-label="전화 상담 010-2568-6630">전화 상담</a></div></aside></div></section>`;
-const reviewCardsHtml = reviews.map((review, index) => `<article class="review-card" data-review-slide data-review-id="${escapeHtml(review.id)}" role="group" aria-roledescription="슬라이드" aria-label="${index + 1} / ${reviews.length}"><div class="review-rating" aria-label="5점 만점에 ${review.rating}점"><span aria-hidden="true">${"★".repeat(review.rating)}${"☆".repeat(5 - review.rating)}</span></div><div class="review-person"><strong>${escapeHtml(review.name)} · ${escapeHtml(review.role)}</strong><span>${escapeHtml(review.category)}</span></div><blockquote><p>${escapeHtml(review.review)}</p></blockquote></article>`).join("");
+const reviewCardsHtml = reviews.map((review, index) => `<article class="review-card" data-review-slide data-review-id="${escapeHtml(review.id)}" role="group" aria-roledescription="슬라이드" aria-label="${index + 1} / ${reviews.length}"><div class="review-rating" aria-label="5점 만점에 ${review.rating}점"><span aria-hidden="true">${"★".repeat(review.rating)}${"☆".repeat(5 - review.rating)}</span></div><div class="review-person"><strong>${escapeHtml(review.name)}</strong><span>${escapeHtml(review.category)} · ${escapeHtml(review.role)}</span></div><blockquote><p>${escapeHtml(review.review)}</p></blockquote></article>`).join("");
 const reviewCarouselHtml = `<section class="section reviews-section" aria-labelledby="reviews-title" data-review-carousel><div class="container"><div class="review-carousel-heading"><div class="section-heading"><p class="section-kicker">수강 후기</p><h2 id="reviews-title">학습자가 전하는 수업 이야기</h2><p class="section-intro">각자의 목표에 맞춰 수업을 진행하며 느낀 점을 확인해 보세요.</p></div><div class="review-carousel-controls" role="group" aria-label="후기 이동"><button class="review-arrow" type="button" data-review-prev aria-label="이전 후기" aria-controls="review-carousel-viewport"><span aria-hidden="true">←</span></button><button class="review-arrow" type="button" data-review-next aria-label="다음 후기" aria-controls="review-carousel-viewport"><span aria-hidden="true">→</span></button></div></div><div class="review-carousel-viewport" id="review-carousel-viewport" role="region" aria-roledescription="캐러셀" aria-label="수강 후기 11개" tabindex="0"><div class="review-carousel-track" data-review-track>${reviewCardsHtml}</div></div><div class="review-carousel-dots" data-review-dots role="group" aria-label="후기 슬라이드 선택"></div><p class="sr-only" data-review-status aria-live="polite" aria-atomic="true"></p></div></section>`;
 const homeFaqs = [{ question: "처음 배우는 사람도 수업을 시작할 수 있나요?", answer: "네. 알고 있는 내용부터 짧게 살펴보고 기초 표현이나 개념부터 수업을 시작합니다." }, { question: "회화와 시험 대비 수업은 어떻게 다른가요?", answer: "회화는 듣고 직접 말하는 시간을 충분히 가지며, 시험 대비는 영역별 개념과 문제 풀이 및 오답 습관을 함께 다룹니다." }, { question: "상담할 때 무엇을 알려주면 되나요?", answer: "배우려는 과목과 현재 실력, 원하는 사용 장면이나 시험일, 가능한 시간을 편하게 말씀해 주세요." }];
 const homeFaqHtml = homeFaqs.map((faq, index) => `<details class="faq-item"${index === 0 ? " open" : ""}><summary><h3>${faq.question}</h3></summary><div class="faq-answer"><p>${faq.answer}</p></div></details>`).join("");
@@ -554,13 +597,28 @@ ${classComparisonHtml}
 ${reviewCarouselHtml}
 <section class="section home-faq" id="faq"><div class="container faq-layout"><div class="section-heading"><p class="section-kicker">FAQ</p><h2>수업을 찾기 전에 확인해 보세요</h2><p class="section-intro">자주 궁금해하는 내용을 먼저 정리했습니다.</p></div><div class="faq-list">${homeFaqHtml}</div></div></section>
 ${consultationFormHtml}`;
+
+// 메인페이지의 상담 행동은 무료 테스트와 카카오톡 문의를 우선해 부담을 낮춥니다.
+const conversionHomeMain = homeMain
+  .replace(
+    '<div class="hero-actions"><a class="button" href="#lessons">지역별 수업 찾기</a><a class="button button-secondary" href="#consultation">1:1 화상수업 상담받기</a></div>',
+    '<div class="hero-actions"><a class="button button-primary" href="#consultation">무료 테스트 수업 받기</a><a class="button button-kakao" href="https://open.kakao.com/o/strVhSJi" target="_blank" rel="noopener noreferrer">카톡으로 문의하기</a></div><p class="hero-reassurance">아직 수강을 결정하지 않으셔도 괜찮습니다. 궁금한 점부터 편하게 문의해주세요.</p>'
+  )
+  .replace(
+    '<p class="cta-kicker">무료 테스트 수업</p><h2 id="level-test-title">집에서 선생님과 만나 현재 실력을 확인해 보세요</h2><p>전국 어디서나 실시간 1:1 화상수업으로 현재 수준을 살펴보고 첫 수업에서 배울 내용을 정합니다.</p><a class="button button-light" href="#consultation">무료 테스트 수업 신청</a>',
+    '<p class="cta-kicker">부담 없는 첫 단계</p><h2 id="level-test-title">수업부터 결정하지 말고,<br>먼저 내 실력부터 확인해보세요.</h2><p>선생님과 실시간 1:1로 현재 수준과 원하는 목표를 확인하고, 필요한 학습 방향을 함께 살펴봅니다. 안내를 들은 뒤 수업 여부를 편하게 결정할 수 있습니다.</p><ul class="level-test-points"><li>현재 수준 확인</li><li>원하는 학습 목표 확인</li><li>필요한 학습 방향 안내</li></ul><div class="level-test-actions"><a class="button button-light" href="#consultation">무료 테스트 수업 신청</a><a class="button button-kakao" href="https://open.kakao.com/o/strVhSJi" target="_blank" rel="noopener noreferrer">카카오톡으로 문의</a></div>'
+  )
+  .replace(
+    '<p class="cta-kicker">무료 상담 신청</p><h2 id="consultation-title">나에게 맞는 수업,<br>무료 상담으로 시작해보세요.</h2><p>희망하는 수업과 현재 고민을 남겨주시면<br>확인 후 순차적으로 연락드리겠습니다.</p>',
+    '<p class="cta-kicker">편한 방법으로 문의하세요</p><h2 id="consultation-title">아직 수강을 결정하지 않으셔도 괜찮습니다.</h2><p>수업 방식이나 일정, 내 수준에서도 가능한지 등<br>궁금한 점부터 편하게 남겨주세요.</p><div class="consultation-contact-guide"><p>폼 작성 전 카카오톡으로 먼저 물어보셔도 됩니다.</p><div><a class="consultation-kakao" href="https://open.kakao.com/o/strVhSJi" target="_blank" rel="noopener noreferrer">💬 카톡으로 먼저 문의하기</a><a href="tel:01025686630">📞 전화로 문의하기</a></div></div>'
+  );
 const homeHtml = renderTemplate(template, {
   ...brandTemplateValues(null, baseUrl),
   LANG: "ko", TITLE: "맞춤 회화 과외 | 지역별 일대일 수업",
   DESCRIPTION: "현재 실력과 배우는 목적에 맞춘 영어·일본어 1:1 수업을 지역별로 찾아볼 수 있습니다.",
   CANONICAL_URL: escapeHtml(`${baseUrl}/`),
   STRUCTURED_DATA: makeJsonLd({ "@context": "https://schema.org", "@graph": [{ "@type": "WebSite", name: "김선생 회화 과외", url: `${baseUrl}/`, inLanguage: "ko" }, { "@type": "Organization", name: "김선생 회화 과외", url: `${baseUrl}/` }, { "@type": "FAQPage", mainEntity: homeFaqs.map((faq) => ({ "@type": "Question", name: faq.question, acceptedAnswer: { "@type": "Answer", text: faq.answer } })) }] }),
-  NAV_LINK: "#lessons", NAV_TEXT: "수업 지역 보기", MAIN: homeMain,
+  NAV_LINK: "#lessons", NAV_TEXT: "수업 지역 보기", MAIN: conversionHomeMain,
   MOBILE_CONTACT_URL: homeContactUrl,
   FOOTER_LINK: "#lessons", FOOTER_TEXT: "상담 신청은 버튼을 이용해 주세요.",
 });

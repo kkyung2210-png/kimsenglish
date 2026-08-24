@@ -4,7 +4,7 @@ const path = require("path");
 const root = path.resolve(__dirname, "..");
 const contentPath = path.join(root, "config", "content");
 const FILES = ["intro", "lesson", "benefit", "faq", "cta", "examples"];
-const TOPIC_PRIORITY = ["toeic", "opic", "ielts", "toefl", "japanese", "english", "business", "travel", "exam", "conversation"];
+const TOPIC_PRIORITY = ["toeic-speaking", "toeic", "opic", "ielts", "toefl", "teps", "jlpt", "jpt", "business", "travel", "japanese", "english", "exam", "conversation"];
 const TARGET_CTA_TITLES = [
   (v) => `${v.region} ${v.target} ${v.service} 수업, 내 상황에도 맞을까요?`,
   (v) => `${v.region} ${v.target} ${v.service}, 지금 시작해도 괜찮을까요?`,
@@ -52,19 +52,36 @@ function stableHash(value) {
   return hash >>> 0;
 }
 
-/** 과목 이름과 기존 template을 함께 보고 FAQ와 예문에 사용할 주제 태그를 만듭니다. */
+/** 제목이나 잘못 연결된 검색의도가 아니라 실제 과목명과 slug로 주제를 하나만 확정합니다. */
+function classifyTopic(page) {
+  const source = `${page.subject || ""} ${page.detailKeyword || ""} ${page.slug || ""}`.toLowerCase();
+  if (/toeic[- ]?speaking|토익\s*스피킹/.test(source)) return "toeic-speaking";
+  if (/toeic|토익/.test(source)) return "toeic";
+  if (/opic|오픽/.test(source)) return "opic";
+  if (/ielts|아이엘츠/.test(source)) return "ielts";
+  if (/toefl|토플/.test(source)) return "toefl";
+  if (/teps|텝스/.test(source)) return "teps";
+  if (/jlpt/.test(source)) return "jlpt";
+  if (/jpt/.test(source)) return "jpt";
+  if (/business|비즈니스|업무/.test(source)) return "business";
+  if (/travel|여행/.test(source)) return "travel";
+  if (/japanese|일본어/.test(source)) return "japanese";
+  if (/english|영어/.test(source)) return "english";
+  return page.contentTemplate === "exam" ? "exam" : "conversation";
+}
+
+/** 한 페이지에는 확정 과목과 그 상위 분류만 허용해 다른 시험·언어 문장이 섞이지 않게 합니다. */
 function topicTags(page) {
-  const source = `${page.subject} ${page.detailKeyword} ${page.keyword}`.toLowerCase();
-  const tags = new Set(["all", page.contentTemplate || "conversation"]);
-  if (/영어|english/.test(source)) tags.add("english");
-  if (/일본어|japanese|jlpt|jpt|eju/.test(source)) tags.add("japanese");
-  if (/토익|toeic/.test(source)) tags.add("toeic");
-  if (/오픽|opic/.test(source)) tags.add("opic");
-  if (/아이엘츠|ielts/.test(source)) tags.add("ielts");
-  if (/토플|toefl/.test(source)) tags.add("toefl");
-  if (/비즈니스|business|업무/.test(source)) tags.add("business");
-  if (/여행|travel/.test(source)) tags.add("travel");
-  return tags;
+  const topic = classifyTopic(page);
+  const parents = {
+    "toeic-speaking": ["toeic-speaking", "exam"], toeic: ["toeic", "exam"],
+    opic: ["opic", "exam"], ielts: ["ielts", "exam"], toefl: ["toefl", "exam"],
+    teps: ["teps", "exam"], jlpt: ["jlpt", "exam"], jpt: ["jpt", "exam"],
+    business: ["business"], travel: ["travel"],
+    japanese: ["japanese", "conversation"], english: ["english", "conversation"],
+    exam: ["exam"], conversation: ["conversation"],
+  };
+  return new Set(["all", ...(parents[topic] || [topic])]);
 }
 
 function eligibleTemplates(name, templates, tags) {
@@ -163,4 +180,4 @@ function createPageContent(page, context) {
   });
 }
 
-module.exports = { createPageContent, loadContentConfig, stableHash };
+module.exports = { classifyTopic, createPageContent, loadContentConfig, stableHash };
