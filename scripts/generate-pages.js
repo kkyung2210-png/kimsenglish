@@ -151,6 +151,12 @@ function escapeHtml(value = "") {
   })[character]);
 }
 
+/** 확인된 연령대와 수강기간만 조합하며, 값이 없으면 보조 줄을 만들지 않습니다. */
+function reviewDetailsHtml(review) {
+  const details = [review.ageGroup, review.duration].map((value) => String(value || "").trim()).filter(Boolean);
+  return details.length ? `<small class="review-details">${details.map(escapeHtml).join(" · ")}</small>` : "";
+}
+
 function normalizeSlug(value) {
   const slug = String(value || "").trim().replace(/^\/+|\/+$/g, "").replace(/^pages\//i, "");
   if (!/^[a-zA-Z0-9][a-zA-Z0-9-]*$/.test(slug)) throw new Error(`사용할 수 없는 slug입니다: ${slug}`);
@@ -590,7 +596,7 @@ const liveLessonBenefits = [
 ];
 const liveLessonBenefitCards = liveLessonBenefits.map(([icon, title, description]) => `<article class="live-benefit-card"><span class="live-benefit-icon" aria-hidden="true"><img src="${icon}" alt="" width="24" height="24" loading="lazy" decoding="async"></span><h3>${title}</h3><p>${description}</p></article>`).join("");
 const liveLessonBenefitsHtml = `<section class="section live-benefits-section" aria-labelledby="live-benefits-title"><div class="container"><div class="section-heading live-benefits-heading"><p class="section-kicker">WHY LIVE 1:1?</p><h2 id="live-benefits-title">왜 실시간 1:1 화상수업인가요?</h2><p class="live-benefits-copy"><strong>이동 시간은 줄이고,<br>나에게 집중하는 시간은 늘립니다.</strong><span>선생님과 실시간으로 대화하며<br>현재 수준과 학습 목표에 맞춰 수업을 진행합니다.</span></p></div><div class="live-benefits-grid">${liveLessonBenefitCards}</div><aside class="live-benefits-summary"><div><h3>온라인이라서 간편하고,<br>1:1이라서 더 집중할 수 있습니다.</h3><p>기초가 부족하면 기초부터,<br>회화가 필요하면 말하기 중심으로,<br>시험이 목표라면 필요한 영역에 집중합니다.</p></div><div class="live-benefits-actions"><a class="button button-primary" href="#consultation">무료 테스트 수업 받아보기</a><a class="button button-kakao" href="https://open.kakao.com/o/strVhSJi" target="_blank" rel="noopener noreferrer">카톡으로 문의하기</a></div></aside></div></section>`;
-const reviewCardsHtml = reviews.map((review, index) => `<article class="review-card" data-review-slide data-review-id="${escapeHtml(review.id)}" role="group" aria-roledescription="슬라이드" aria-label="${index + 1} / ${reviews.length}"><div class="review-rating" aria-label="5점 만점에 ${review.rating}점"><span aria-hidden="true">${"★".repeat(review.rating)}${"☆".repeat(5 - review.rating)}</span></div><div class="review-person"><strong>${escapeHtml(review.name)}</strong><span>${escapeHtml(review.category)} · ${escapeHtml(review.role)}</span></div><blockquote><p>${escapeHtml(review.review)}</p></blockquote></article>`).join("");
+const reviewCardsHtml = reviews.map((review, index) => `<article class="review-card" data-review-slide data-review-id="${escapeHtml(review.id)}" role="group" aria-roledescription="슬라이드" aria-label="${index + 1} / ${reviews.length}"><div class="review-rating" aria-label="5점 만점에 ${review.rating}점"><span aria-hidden="true">${"★".repeat(review.rating)}${"☆".repeat(5 - review.rating)}</span></div><div class="review-person"><strong>${escapeHtml(review.name)}</strong><span>${escapeHtml(review.category)} · ${escapeHtml(review.role)}</span>${reviewDetailsHtml(review)}</div><blockquote><p>${escapeHtml(review.review)}</p></blockquote></article>`).join("");
 const reviewCarouselHtml = `<section class="section reviews-section" aria-labelledby="reviews-title" data-review-carousel><div class="container"><div class="review-carousel-heading"><div class="section-heading"><p class="section-kicker">수강 후기</p><h2 id="reviews-title">학습자가 전하는 수업 이야기</h2><p class="section-intro">각자의 목표에 맞춰 수업을 진행하며 느낀 점을 확인해 보세요.</p></div><div class="review-carousel-controls" role="group" aria-label="후기 이동"><button class="review-arrow" type="button" data-review-prev aria-label="이전 후기" aria-controls="review-carousel-viewport"><span aria-hidden="true">←</span></button><button class="review-arrow" type="button" data-review-next aria-label="다음 후기" aria-controls="review-carousel-viewport"><span aria-hidden="true">→</span></button></div></div><div class="review-carousel-viewport" id="review-carousel-viewport" role="region" aria-roledescription="캐러셀" aria-label="수강 후기 11개" tabindex="0"><div class="review-carousel-track" data-review-track>${reviewCardsHtml}</div></div><div class="review-carousel-dots" data-review-dots role="group" aria-label="후기 슬라이드 선택"></div><p class="sr-only" data-review-status aria-live="polite" aria-atomic="true"></p></div></section>`;
 const homeFaqs = [{ question: "처음 배우는 사람도 수업을 시작할 수 있나요?", answer: "네. 알고 있는 내용부터 짧게 살펴보고 기초 표현이나 개념부터 수업을 시작합니다." }, { question: "회화와 시험 대비 수업은 어떻게 다른가요?", answer: "회화는 듣고 직접 말하는 시간을 충분히 가지며, 시험 대비는 영역별 개념과 문제 풀이 및 오답 습관을 함께 다룹니다." }, { question: "상담할 때 무엇을 알려주면 되나요?", answer: "배우려는 과목과 현재 실력, 원하는 사용 장면이나 시험일, 가능한 시간을 편하게 말씀해 주세요." }];
 const homeFaqHtml = homeFaqs.map((faq, index) => `<details class="faq-item"${index === 0 ? " open" : ""}><summary><h3>${faq.question}</h3></summary><div class="faq-answer"><p>${faq.answer}</p></div></details>`).join("");
@@ -642,5 +648,6 @@ module.exports = {
   escapeHtml,
   generatePages,
   loadPages,
+  reviewDetailsHtml,
   renderTemplate,
 };
