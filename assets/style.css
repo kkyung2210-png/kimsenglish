@@ -677,7 +677,7 @@ p { margin-top: 0; }
   .home-hero-layout { grid-template-columns: minmax(0, 1fr); gap: 46px; }
   .hero-layout { grid-template-columns: minmax(0, 1.08fr) minmax(360px, .92fr); gap: 64px; }
   .home-hero .image-box-hero { width: min(100%, 960px); justify-self: center; aspect-ratio: 16 / 9; }
-  .home-hero .image-box-hero img { object-fit: contain; object-position: right center; }
+  .home-hero .image-box-hero img { object-fit: cover; object-position: right center; }
   .hub-hero-layout { grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr); gap: 56px; }
   .hub-hero-media { margin-bottom: 0; }
   .reason-grid, .management-grid, .related-grid, .lesson-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }

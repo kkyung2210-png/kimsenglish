@@ -12,8 +12,8 @@ module.exports = Object.freeze({
     mark: { src: "/assets/logo/logo-mark.svg", placeholder: "/images/brand/logo-placeholder.svg", alt: "", width: 44, height: 44, decorative: true },
   }),
   hero: Object.freeze({
-    desktop: { src: "/assets/hero/hero-desktop.webp", placeholder: "/images/hero/hero-placeholder.svg", alt: "전국 지역별 맞춤 수업 안내", width: 1600, height: 900 },
-    mobile: { src: "/assets/hero/hero-mobile.webp", placeholder: "/images/hero/hero-placeholder.svg", alt: "전국 지역별 맞춤 수업 안내", width: 1200, height: 900 },
+    desktop: { src: "/images/hero.webp", placeholder: "/images/hero/hero-placeholder.svg", alt: "전국 지역별 맞춤 수업 안내", width: 1983, height: 793 },
+    mobile: { src: "/images/hero-mobile.webp", placeholder: "/images/hero/hero-placeholder.svg", alt: "전국 지역별 맞춤 수업 안내", width: 1983, height: 793 },
   }),
   subjects: Object.freeze({
     english: { src: "/assets/subjects/english.webp", placeholder: "/images/categories/english-placeholder.svg", alt: "영어 맞춤 수업", width: 1024, height: 1024 },
